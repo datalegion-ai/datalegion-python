@@ -1,6 +1,6 @@
 [project]
 name = "datalegion"
-version = "0.8.1"
+version = "0.8.2"
 description = "Python client for the Data Legion API"
 authors = [{name = "Data Legion", email = "engineering@datalegion.ai"}]
 requires-python = ">=3.11"
