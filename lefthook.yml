@@ -1,0 +1,6 @@
+pre-commit:
+  commands:
+    lint:
+      run: uv run python scripts/lint.py
+      # Lint fixes files in place; without this the commit records the unfixed staged copy.
+      stage_fixed: true

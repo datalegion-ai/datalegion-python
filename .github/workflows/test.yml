@@ -1,0 +1,108 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  lint:
+    name: Lint & Build
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: "0.13.x"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install  # .python-version, the 3.11 floor
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Run lint
+        run: uv run python scripts/lint.py
+
+      - name: Check lint changed nothing
+        # `lint` fixes in place (ruff format, ruff check --fix, mdformat) and exits 0, so on its own
+        # CI passes code nobody formatted. Any file it had to change fails the job here.
+        run: |
+          git diff --exit-code || {
+            echo "::error::Lint changed the files above. Run \`uv run python scripts/lint.py\` and commit the result."
+            exit 1
+          }
+
+      - name: Build
+        run: uv build
+
+      - name: Prune uv cache
+        if: always()
+        run: uv cache prune --ci
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    # Without this uv takes the interpreter from .python-version (the 3.11 floor), and
+    # every leg ran the floor while its name said otherwise (seen on main, 2026-09-25).
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every non-EOL CPython line pyproject.toml's classifiers claim. The main branch
+        # requires each leg by name: a new leg is added there after its first green run.
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: "0.13.x"
+          enable-cache: true
+          # Matrix legs share one cache key otherwise and race to save it ("Unable to reserve cache").
+          cache-suffix: py${{ matrix.python-version }}
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Check the interpreter is the matrix version
+        run: uv run python -c "import sys; v = '%d.%d' % sys.version_info[:2]; assert v == '${{ matrix.python-version }}', f'ran {sys.version}, matrix says ${{ matrix.python-version }}'; print(sys.version)"
+
+      - name: Run tests
+        run: uv run pytest tests/ -v --tb=short
+        env:
+          DATALEGION_API_KEY: ${{ secrets.DATALEGION_API_KEY }}
+
+      - name: Prune uv cache
+        if: always()
+        run: uv cache prune --ci

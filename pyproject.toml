@@ -1,0 +1,101 @@
+[project]
+name = "datalegion"
+version = "0.8.1"
+description = "Python client for the Data Legion API"
+authors = [{name = "Data Legion", email = "engineering@datalegion.ai"}]
+requires-python = ">=3.11"
+license = {text = "MIT"}
+readme = "README.md"
+keywords = [
+    "datalegion",
+    "api",
+    "sdk",
+    "person-enrichment",
+    "company-enrichment",
+    "data-enrichment",
+    "b2b",
+    "contact-data",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx>=0.24.0",
+    "pydantic>=2.0",
+    # httpx verifies TLS against certifi's bundle. 2026.10.19 drops emSign ECC Root CA - G3, whose
+    # intermediates were compromised (GHSA-6q48-6c7w-9gw2), so upgrading the SDK fixes it.
+    "certifi>=2026.10.19",
+]
+
+[project.urls]
+Homepage = "https://www.datalegion.ai"
+Documentation = "https://www.datalegion.ai/docs"
+Repository = "https://github.com/datalegion-ai/datalegion-python"
+Issues = "https://github.com/datalegion-ai/datalegion-python/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Only the SDK ships. The dev scripts run in place (`uv run python scripts/lint.py`) and are not
+# packaged, so installing the SDK adds no `scripts` module and no `lint`/`test` commands. The sdist
+# carries the source and tests, never repo tooling (.claude/, .github/, lefthook.yml).
+[tool.hatch.build.targets.wheel]
+packages = ["src/datalegion"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/datalegion", "tests"]
+# The shipped tests must pass from the sdist alone. tests/test_ci.py checks .github/ and
+# lefthook.yml, which the sdist leaves out, and the test conventions read the git index, which
+# an sdist has none of, so those stay out too.
+exclude = ["tests/test_ci.py", "tests/test_conventions.py", "tests/_conventions.py"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.18",
+    # HOLD mdformat below 1.0: mdformat-tables 1.0.0 requires mdformat<0.8.0, so
+    # mdformat 1.x is unsatisfiable next to it. Lift when a mdformat-tables
+    # release after 1.0.0 allows mdformat 1.x.
+    "mdformat>=0.7.22,<1.0",
+    "mdformat-gfm>=1.0.0",
+    "mdformat-tables>=1.0.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-dotenv>=0.5.2",
+    "pytest-rerunfailures>=16.3",
+    "lefthook>=2.1.10",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+# ruff 0.16 formats Python code blocks inside Markdown by default, and mdformat
+# already owns Markdown here. CI is unaffected (scripts/lint.py scopes ruff to
+# src/ tests/ scripts/), but a bare `ruff format .` at the root rewrites README.md,
+# collapsing the aligned trailing comments in the attribute examples onto single
+# spaces. Guard against that so the two formatters can't disagree.
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "UP", "RUF", "W291"]
+ignore = ["E501", "D202", "RUF067"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["datalegion"]
+combine-as-imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+env_files = [".env"]
+markers = [
+    "integration: tests that call the real Data Legion API",
+]
