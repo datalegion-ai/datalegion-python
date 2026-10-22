@@ -855,6 +855,38 @@ class TestCompanyLocationsParse:
             assert c.company.enrich(domain="stripe.com").locations == []
 
 
+class TestPersonNpiParse:
+    """Person `npi` and `npi_last_updated` parse, and enrich sends `npi` (mocked, no key)."""
+
+    _FAKE: ClassVar[dict] = {
+        "matches": [
+            {"person": {"legion_id": "p1", "npi": "1679576722", "npi_last_updated": "2026-07-13"}}
+        ],
+        "total": 1,
+    }
+
+    def test_enrich_posts_npi_and_parses_the_fields(self):
+        c = DataLegion(api_key="legion_test")
+        with patch.object(c, "_post", return_value=self._FAKE) as mock_post:
+            person = c.person.enrich(npi="1679576722")
+        mock_post.assert_called_once_with("/person/enrich", {"npi": "1679576722"})
+        assert (person.npi, person.npi_last_updated) == ("1679576722", "2026-07-13")
+        c.close()
+
+    async def test_async_enrich_posts_npi(self):
+        c = AsyncDataLegion(api_key="legion_test")
+        with patch.object(c, "_post", new=AsyncMock(return_value=self._FAKE)) as mock_post:
+            person = await c.person.enrich(npi="1679576722")
+        mock_post.assert_awaited_once_with("/person/enrich", {"npi": "1679576722"})
+        assert person.npi == "1679576722"
+
+    def test_a_response_without_npi_has_none(self):
+        body = {"matches": [{"person": {"legion_id": "p1"}}], "total": 1}
+        with _mock_client(lambda _r: httpx.Response(200, json=body)) as c:
+            person = c.person.enrich(email="jane@acme.com")
+        assert (person.npi, person.npi_last_updated) == (None, None)
+
+
 class TestUserAgent:
     """Requests identify the SDK so the API can tell its traffic apart."""
 
