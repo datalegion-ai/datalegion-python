@@ -1396,8 +1396,8 @@ class DataLegion:
         # search/discover only: "exact" | "estimate" | "page" — how `total` was
         # derived. `estimate` means broad-query planner estimate (magnitude only).
         self.total_count_status = response.headers.get("Total-Count-Status")
-        # search/discover only: why a filter was judged empty or slow, or what was
-        # searched instead of it. None when the search had nothing to say.
+        # search/discover only: why a filter was flagged (for example an industry
+        # name no stored value matches) and what to change. None when absent.
         self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
@@ -1547,8 +1547,8 @@ class AsyncDataLegion:
         # search/discover only: "exact" | "estimate" | "page" — how `total` was
         # derived. `estimate` means broad-query planner estimate (magnitude only).
         self.total_count_status = response.headers.get("Total-Count-Status")
-        # search/discover only: why a filter was judged empty or slow, or what was
-        # searched instead of it. None when the search had nothing to say.
+        # search/discover only: why a filter was flagged (for example an industry
+        # name no stored value matches) and what to change. None when absent.
         self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
