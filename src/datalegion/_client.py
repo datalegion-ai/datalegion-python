@@ -1367,6 +1367,7 @@ class DataLegion:
         self.generated_query: str | None = None
         self.correlation_id: str | None = None
         self.total_count_status: str | None = None
+        self.search_warning: str | None = None
 
         # Resource namespaces
         self.person = _PersonResource(self)
@@ -1395,6 +1396,9 @@ class DataLegion:
         # search/discover only: "exact" | "estimate" | "page" — how `total` was
         # derived. `estimate` means broad-query planner estimate (magnitude only).
         self.total_count_status = response.headers.get("Total-Count-Status")
+        # search/discover only: why a filter was flagged (for example an industry
+        # name no stored value matches) and what to change. None when absent.
+        self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
         """Extract generated_query from response body (discover endpoints)."""
@@ -1514,6 +1518,7 @@ class AsyncDataLegion:
         self.generated_query: str | None = None
         self.correlation_id: str | None = None
         self.total_count_status: str | None = None
+        self.search_warning: str | None = None
 
         # Resource namespaces
         self.person = _AsyncPersonResource(self)
@@ -1542,6 +1547,9 @@ class AsyncDataLegion:
         # search/discover only: "exact" | "estimate" | "page" — how `total` was
         # derived. `estimate` means broad-query planner estimate (magnitude only).
         self.total_count_status = response.headers.get("Total-Count-Status")
+        # search/discover only: why a filter was flagged (for example an industry
+        # name no stored value matches) and what to change. None when absent.
+        self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
         """Extract generated_query from response body (discover endpoints)."""
