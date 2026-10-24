@@ -253,9 +253,12 @@ print(client.retry_after)            # seconds to wait (on 429 responses)
 print(client.generated_query)        # SQL from discover endpoints
 print(client.correlation_id)         # echoed Correlation-ID
 print(client.total_count_status)     # search/discover: "exact" | "estimate" | "page"
+print(client.search_warning)         # search/discover: why a filter was flagged, or None
 ```
 
 On `search`/`discover`, `total_count_status` tells you how the response `total` was derived: `exact` (true count), `estimate` (the query planner's row estimate — returned on broad queries where an exact count is too expensive, so treat it as a magnitude), or `page` (count unavailable; `total` is just the returned page size).
+
+`search_warning` is set when a search flags one of its filters: for example an industry name that no stored value matches (the page comes back empty without being charged), or a pattern too short to search efficiently. It says what to change.
 
 ## Error Handling
 
