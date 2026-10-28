@@ -401,6 +401,7 @@ class TestRequestCore:
                     "Credits-Remaining": "unlimited",  # non-numeric → None, not an error
                     "RateLimit-Limit": "100",
                     "Total-Count-Status": "estimate",
+                    "Search-Warning": "No company_industry value matches 'x'",
                 },
             )
 
@@ -411,6 +412,34 @@ class TestRequestCore:
             assert c.credits_remaining is None
             assert c.rate_limit_limit == 100
             assert c.total_count_status == "estimate"
+            assert c.search_warning == "No company_industry value matches 'x'"
+
+    def test_search_warning_is_none_without_the_header(self):
+        def handler(_request):
+            return httpx.Response(200, json={"status": "ok"})
+
+        with _mock_client(handler) as c:
+            c.health()
+            assert c.search_warning is None
+
+    async def test_async_search_warning_is_read_and_reset(self):
+        responses = iter(
+            [
+                httpx.Response(200, json={"status": "ok"}, headers={"Search-Warning": "flagged"}),
+                httpx.Response(200, json={"status": "ok"}),
+            ]
+        )
+        c = AsyncDataLegion(
+            api_key="legion_test",
+            httpx_client=httpx.AsyncClient(
+                transport=httpx.MockTransport(lambda _r: next(responses))
+            ),
+        )
+        await c.health()
+        assert c.search_warning == "flagged"
+        await c.health()
+        assert c.search_warning is None
+        await c.close()
 
     def test_single_enrich_empty_matches_raises_clean_404(self):
         # A 200 with no matches must not IndexError — it raises a clean 404.
