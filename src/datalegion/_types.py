@@ -482,11 +482,22 @@ class ValidationSuggestion(_Base):
     cleaned: str | dict[str, str] | None = None
 
 
+class EmailDomainCheck(_Base):
+    domain: str
+    mail: str
+    mail_servers: list[str] = []
+    disposable: bool = False
+    free: bool = False
+    relay: bool = False
+    intended_domain: str | None = None
+
+
 class ValidationResponse(_Base):
     valid: bool
     errors: list[ValidationErrorDetail] = []
     warnings: list[ValidationWarning] = []
     suggestions: list[ValidationSuggestion] = []
+    email_check: EmailDomainCheck | None = None
 
 
 # ---------------------------------------------------------------------------

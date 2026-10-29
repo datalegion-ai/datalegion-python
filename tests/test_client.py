@@ -689,6 +689,9 @@ class TestUtilityValidate:
         assert isinstance(result.errors, list)
         assert isinstance(result.warnings, list)
         assert isinstance(result.suggestions, list)
+        assert result.email_check is not None
+        assert result.email_check.domain == "gmail.com"
+        assert result.email_check.free is True
 
     async def test_async_validate_email(self, async_client):
         """Async validate returns expected validation structure."""
