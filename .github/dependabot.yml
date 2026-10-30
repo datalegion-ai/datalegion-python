@@ -14,11 +14,6 @@ updates:
       - "python"
     commit-message:
       prefix: "chore(deps)"
-    ignore:
-      # mdformat: held <1.0 in pyproject (mdformat-tables 1.0.0 requires
-      # mdformat<0.8.0; lift when a later release allows 1.x); without this every run fails trying the major.
-      - dependency-name: "mdformat"
-        update-types: ["version-update:semver-major"]
     groups:
       minor-patch:
         patterns:

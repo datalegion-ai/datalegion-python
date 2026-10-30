@@ -62,12 +62,9 @@ exclude = ["tests/test_ci.py", "tests/test_conventions.py", "tests/_conventions.
 [dependency-groups]
 dev = [
     "ruff>=0.15.18",
-    # HOLD mdformat below 1.0: mdformat-tables 1.0.0 requires mdformat<0.8.0, so
-    # mdformat 1.x is unsatisfiable next to it. Lift when a mdformat-tables
-    # release after 1.0.0 allows mdformat 1.x.
-    "mdformat>=0.7.22,<1.0",
+    # mdformat-gfm formats tables itself since mdformat-tables moved into it.
+    "mdformat>=1.0.0",
     "mdformat-gfm>=1.0.0",
-    "mdformat-tables>=1.0.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-dotenv>=0.5.2",
@@ -95,6 +92,7 @@ combine-as-imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 env_files = [".env"]
 markers = [
     "integration: tests that call the real Data Legion API",
