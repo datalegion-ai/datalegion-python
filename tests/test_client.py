@@ -6,6 +6,7 @@ environment variable to run them.
 
 from __future__ import annotations
 
+import json
 import os
 from typing import ClassVar
 from unittest.mock import AsyncMock, patch
@@ -421,6 +422,23 @@ class TestRequestCore:
         with _mock_client(handler) as c:
             c.health()
             assert c.search_warning is None
+
+    def test_search_and_discover_leave_limit_to_the_api_by_default(self):
+        """Without limit the body omits it, and the API returns one result (its default)."""
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(200, json={"matches": [], "total": 0})
+
+        with _mock_client(handler) as c:
+            c.person.search(query="SELECT * FROM people WHERE state = 'ohio'")
+            c.person.discover(query="engineers in ohio")
+            c.company.search(query="SELECT * FROM companies WHERE industry = 'banking'")
+            c.company.discover(query="banks in ohio")
+            c.person.search(query="SELECT * FROM people WHERE state = 'ohio'", limit=25)
+        assert ["limit" in b for b in bodies] == [False, False, False, False, True]
+        assert bodies[-1]["limit"] == 25
 
     async def test_async_search_warning_is_read_and_reset(self):
         responses = iter(
