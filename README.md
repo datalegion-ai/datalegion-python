@@ -68,7 +68,7 @@ person = client.person.enrich(social_url="https://linkedin.com/in/johndoe")
 
 ## Person Search
 
-Search for people using SQL queries.
+Search for people using SQL queries. `limit` is optional: without it the API returns one result (max 100).
 
 ```python
 results = client.person.search(
