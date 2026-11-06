@@ -138,7 +138,7 @@ def _safe_int(value: str | None) -> int | None:
 
 
 class _PersonResource:
-    """Access person endpoints: enrich, search, discover."""
+    """Access person endpoints: Enrich, Search, Discover."""
 
     def __init__(self, client: DataLegion) -> None:
         self._client = client
@@ -390,7 +390,7 @@ class _PersonResource:
 
 
 class _CompanyResource:
-    """Access company endpoints: enrich, search, discover."""
+    """Access company endpoints: Enrich, Search, Discover."""
 
     def __init__(self, client: DataLegion) -> None:
         self._client = client
@@ -718,7 +718,7 @@ class _UtilityResource:
 
 
 class _AsyncPersonResource:
-    """Access person endpoints (async): enrich, search, discover."""
+    """Access person endpoints (async): Enrich, Search, Discover."""
 
     def __init__(self, client: AsyncDataLegion) -> None:
         self._client = client
@@ -974,7 +974,7 @@ class _AsyncPersonResource:
 
 
 class _AsyncCompanyResource:
-    """Access company endpoints (async): enrich, search, discover."""
+    """Access company endpoints (async): Enrich, Search, Discover."""
 
     def __init__(self, client: AsyncDataLegion) -> None:
         self._client = client
@@ -1401,7 +1401,7 @@ class DataLegion:
         self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
-        """Extract generated_query from response body (discover endpoints)."""
+        """Extract generated_query from response body (Discover endpoints)."""
         self.generated_query = data.get("generated_query")
 
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -1552,7 +1552,7 @@ class AsyncDataLegion:
         self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
-        """Extract generated_query from response body (discover endpoints)."""
+        """Extract generated_query from response body (Discover endpoints)."""
         self.generated_query = data.get("generated_query")
 
     async def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:

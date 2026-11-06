@@ -252,7 +252,7 @@ class PersonMatchesResponse(_Base):
 
 
 class BulkPersonItemResult(_Base):
-    """A single result from a bulk person enrichment request."""
+    """A single result from a Person Bulk Enrich request."""
 
     matches: list[PersonMatch] | None = None
     total: int | None = None
@@ -261,13 +261,13 @@ class BulkPersonItemResult(_Base):
 
 
 class BulkPersonEnrichResponse(_Base):
-    """Response from a bulk person enrichment request."""
+    """Response from a Person Bulk Enrich request."""
 
     results: list[BulkPersonItemResult] = []
 
 
 class DynamicBulkPersonResult(_Base):
-    """One item's result from a dynamic bulk enrichment.
+    """One item's result from a Dynamic Bulk Enrich.
 
     ``/dynamic`` returns only the requested contact groups, so only the phones
     and/or emails fields are populated (plus the echoed ``metadata`` and the
@@ -284,7 +284,7 @@ class DynamicBulkPersonResult(_Base):
 
 
 class DynamicBulkPersonEnrichResponse(_Base):
-    """Response from a dynamic bulk person enrichment request (phones/emails only)."""
+    """Response from a Person Dynamic Bulk Enrich request (phones/emails only)."""
 
     results: list[DynamicBulkPersonResult] = []
 
@@ -428,7 +428,7 @@ class CompanyMatchesResponse(_Base):
 
 
 class BulkCompanyItemResult(_Base):
-    """A single result from a bulk company enrichment request."""
+    """A single result from a Company Bulk Enrich request."""
 
     matches: list[CompanyMatch] | None = None
     total: int | None = None
@@ -437,7 +437,7 @@ class BulkCompanyItemResult(_Base):
 
 
 class BulkCompanyEnrichResponse(_Base):
-    """Response from a bulk company enrichment request."""
+    """Response from a Company Bulk Enrich request."""
 
     results: list[BulkCompanyItemResult] = []
 
