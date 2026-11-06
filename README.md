@@ -46,15 +46,6 @@ print(person.full_name)
 print(person.job_title)
 print(person.company_name)
 
-# Multiple results
-results = client.person.enrich(
-    email="john@example.com",
-    multiple_results=True,
-    limit=5,
-)
-for match in results.matches:
-    print(match.person.full_name, match.match_metadata.match_confidence)
-
 # Enrich by name + company
 person = client.person.enrich(
     first_name="John",
@@ -105,11 +96,6 @@ print(company.legion_employee_count)
 
 # By name
 company = client.company.enrich(name="Google")
-
-# Multiple results
-results = client.company.enrich(name="Apple", multiple_results=True, limit=3)
-for match in results.matches:
-    print(match.company.name.cleaned)
 ```
 
 ## Company Search
