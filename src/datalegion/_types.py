@@ -267,7 +267,7 @@ class BulkPersonEnrichResponse(_Base):
 
 
 class DynamicBulkPersonResult(_Base):
-    """One item's result from a dynamic bulk enrichment.
+    """One item's result from a Dynamic Bulk Enrichment.
 
     ``/dynamic`` returns only the requested contact groups, so only the phones
     and/or emails fields are populated (plus the echoed ``metadata`` and the

@@ -250,7 +250,7 @@ print(client.rate_limit_remaining)   # remaining requests in current window
 print(client.rate_limit_reset)       # unix timestamp when window resets
 print(client.rate_limit_policy)      # rate limit policy (e.g. "100/min")
 print(client.retry_after)            # seconds to wait (on 429 responses)
-print(client.generated_query)        # SQL from discover endpoints
+print(client.generated_query)        # SQL from the Discover endpoints
 print(client.correlation_id)         # echoed Correlation-ID
 print(client.total_count_status)     # search/discover: "exact" | "estimate" | "page"
 print(client.search_warning)         # search/discover: why a filter was flagged, or None
@@ -316,7 +316,7 @@ All exceptions inherit from `DataLegionError` and include these attributes:
 
 ## Sandbox
 
-Pass `sandbox=True` to try the SDK without spending credits. Enrich, bulk enrich, search and discover then return sample records (Jane Sandbox, Sandbox Corp) with every field a real record has; the utilities, which are free anyway, call the real API.
+Pass `sandbox=True` to try the SDK without spending credits. Enrich, Bulk Enrich, Search and Discover then return sample records (Jane Sandbox, Sandbox Corp) with every field a real record has; the utilities, which are free anyway, call the real API.
 
 ```python
 client = DataLegion(api_key="legion_...", sandbox=True)
