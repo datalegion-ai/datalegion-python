@@ -194,15 +194,6 @@ class TestPersonEnrich:
         assert result.first_name is not None
         assert result.last_name is not None
 
-    def test_enrich_multiple_results(self, sandbox_client):
-        """Enrich with multiple_results returns a PersonMatchesResponse."""
-        result = sandbox_client.person.enrich(social_url=MADE_UP_PROFILE, multiple_results=True)
-        assert isinstance(result, PersonMatchesResponse)
-        assert isinstance(result.total, int)
-        assert isinstance(result.matches, list)
-        assert len(result.matches) > 0
-        assert isinstance(result.matches[0].person, PersonResponse)
-
     def test_enrich_response_headers(self, sandbox_client):
         """Response headers are populated after a request."""
         sandbox_client.person.enrich(social_url=MADE_UP_PROFILE)
@@ -1009,3 +1000,21 @@ class TestSandbox:
             company = c.company.enrich(domain="example.org")
         assert person.legion_id.startswith("sandbox_")
         assert company.legion_id.startswith("sandbox_")
+
+
+def test_enrich_takes_no_multiple_results():
+    """Enrich answers one best match: neither multiple_results nor limit is a parameter."""
+    import inspect
+
+    from datalegion import AsyncDataLegion, DataLegion
+
+    for client_cls in (DataLegion, AsyncDataLegion):
+        client = client_cls(api_key="legion_test")
+        for method in (
+            client.person.enrich,
+            client.company.enrich,
+            client.person.bulk_enrich,
+            client.company.bulk_enrich,
+        ):
+            params = inspect.signature(method).parameters
+            assert "multiple_results" not in params and "limit" not in params

@@ -255,7 +255,6 @@ class BulkPersonItemResult(_Base):
     """A single result from a Person Bulk Enrich request."""
 
     matches: list[PersonMatch] | None = None
-    total: int | None = None
     error: str | None = None
     metadata: dict[str, str | int | float | bool] | None = None
 
@@ -431,7 +430,6 @@ class BulkCompanyItemResult(_Base):
     """A single result from a Company Bulk Enrich request."""
 
     matches: list[CompanyMatch] | None = None
-    total: int | None = None
     error: str | None = None
     metadata: dict[str, str | int | float | bool] | None = None
 
