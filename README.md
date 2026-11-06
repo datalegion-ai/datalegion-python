@@ -324,7 +324,7 @@ person = client.person.enrich(email="anyone@example.com")
 print(person.legion_id)  # "sandbox_person_001"
 ```
 
-Sandbox discover answers only a few fixed example queries; the error lists them. If your API key is limited to certain endpoints, add the `/sandbox/...` ones.
+Sandbox Discover answers only a few fixed example queries; the error lists them. If your API key is limited to certain endpoints, add the `/sandbox/...` ones.
 
 ## Configuration
 
