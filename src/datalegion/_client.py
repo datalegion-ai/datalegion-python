@@ -1138,7 +1138,7 @@ class DataLegion:
         self.retry_after = _safe_int(response.headers.get("Retry-After"))
         self.correlation_id = response.headers.get("Correlation-ID")
         # search/discover only: "exact" | "estimate" | "page" — how `total` was
-        # derived. `estimate` means broad-query planner estimate (magnitude only).
+        # derived. `estimate` means the count ran out of time: a lower bound.
         self.total_count_status = response.headers.get("Total-Count-Status")
         # search/discover only: why a filter was flagged (for example an industry
         # name no stored value matches) and what to change. None when absent.
@@ -1289,7 +1289,7 @@ class AsyncDataLegion:
         self.retry_after = _safe_int(response.headers.get("Retry-After"))
         self.correlation_id = response.headers.get("Correlation-ID")
         # search/discover only: "exact" | "estimate" | "page" — how `total` was
-        # derived. `estimate` means broad-query planner estimate (magnitude only).
+        # derived. `estimate` means the count ran out of time: a lower bound.
         self.total_count_status = response.headers.get("Total-Count-Status")
         # search/discover only: why a filter was flagged (for example an industry
         # name no stored value matches) and what to change. None when absent.
