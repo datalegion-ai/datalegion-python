@@ -431,6 +431,29 @@ class TestRequestCore:
         assert ["limit" in b for b in bodies] == [False, False, False, False, True]
         assert bodies[-1]["limit"] == 25
 
+    def test_search_sends_a_query_object_and_a_cursor_and_reads_next_cursor(self):
+        """A dict query goes as JSON, cursor rides in the body, next_cursor comes back."""
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(200, json={"matches": [], "total": 0, "next_cursor": "abc"})
+
+        query = {"bool": {"filter": [{"term": {"job_title": "engineer"}}]}}
+        with _mock_client(handler) as c:
+            first = c.person.search(query=query, limit=10)
+            c.company.search(query={"exists": {"field": "domain"}}, cursor=first.next_cursor)
+        assert bodies[0]["query"] == query and "cursor" not in bodies[0]
+        assert bodies[1]["cursor"] == "abc"
+        assert first.next_cursor == "abc"
+
+    def test_next_cursor_is_none_when_the_api_sends_none(self):
+        def handler(_request):
+            return httpx.Response(200, json={"matches": [], "total": 0})
+
+        with _mock_client(handler) as c:
+            assert c.person.search(query="SELECT * FROM people").next_cursor is None
+
     async def test_async_search_warning_is_read_and_reset(self):
         responses = iter(
             [

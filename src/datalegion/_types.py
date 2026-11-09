@@ -249,6 +249,7 @@ class PersonMatchesResponse(_Base):
 
     matches: list[PersonMatch] = []
     total: int = 0
+    next_cursor: str | None = None
 
 
 class BulkPersonItemResult(_Base):
@@ -424,6 +425,7 @@ class CompanyMatchesResponse(_Base):
 
     matches: list[CompanyMatch] = []
     total: int = 0
+    next_cursor: str | None = None
 
 
 class BulkCompanyItemResult(_Base):
