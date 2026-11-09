@@ -615,6 +615,27 @@ class TestCompanyBulkEnrich:
 
 
 @requires_api_key
+@requires_api_key
+@integration
+@pytest.mark.flaky(reruns=2, reruns_delay=10)
+class TestSearchByQueryObject:
+    """A query object and a cursor against the live API."""
+
+    def test_a_query_object_pages_by_cursor(self, client):
+        query = {
+            "bool": {"filter": [{"term": {"state": "texas"}}, {"match": {"job_title": "nurse"}}]}
+        }
+        first = client.person.search(query=query, limit=2, include_fields="legion_id")
+        assert len(first.matches) == 2 and first.next_cursor
+        second = client.person.search(
+            query=query, limit=2, cursor=first.next_cursor, include_fields="legion_id"
+        )
+        by_offset = client.person.search(query=query, limit=2, offset=2, include_fields="legion_id")
+        assert [m.person.legion_id for m in second.matches] == [
+            m.person.legion_id for m in by_offset.matches
+        ]
+
+
 @integration
 @pytest.mark.flaky(reruns=2, reruns_delay=10)
 class TestCompanySearch:
