@@ -70,6 +70,39 @@ for match in results.matches:
     print(match.person.full_name)
 ```
 
+### Query objects and cursors
+
+`query` can also be an Elasticsearch-style query object: `bool` (`must`, `should`, `filter`, `must_not`), `term`, `terms`, `match`, `match_phrase`, `range`, `exists`, `prefix`, `wildcard` and `nested`, on the response's own field names. Equality and prefixes ignore case.
+
+```python
+results = client.person.search(
+    query={
+        "bool": {
+            "filter": [
+                {"term": {"company_name": "google"}},
+                {"match": {"job_title": "engineer"}},
+            ]
+        }
+    },
+    limit=100,
+)
+```
+
+For deep paging and exports, send each page's `next_cursor` back as `cursor` (instead of `offset`). The last page has no `next_cursor`. A cursor belongs to one search on one dataset build, so after a new build, start again from the first page.
+
+```python
+cursor = None
+while True:
+    page = client.person.search(query="SELECT * FROM people WHERE state = 'ohio'", limit=100, cursor=cursor)
+    for match in page.matches:
+        print(match.person.legion_id)
+    cursor = page.next_cursor
+    if not cursor:
+        break
+```
+
+Company search takes the same `query` object and `cursor`.
+
 ## Person Discover
 
 Search for people using natural language.

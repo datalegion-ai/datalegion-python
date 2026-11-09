@@ -431,6 +431,47 @@ class TestRequestCore:
         assert ["limit" in b for b in bodies] == [False, False, False, False, True]
         assert bodies[-1]["limit"] == 25
 
+    def test_search_sends_a_query_object_and_a_cursor_and_reads_next_cursor(self):
+        """A dict query goes as JSON, cursor rides in the body, next_cursor comes back."""
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(200, json={"matches": [], "total": 0, "next_cursor": "abc"})
+
+        query = {"bool": {"filter": [{"term": {"job_title": "engineer"}}]}}
+        with _mock_client(handler) as c:
+            first = c.person.search(query=query, limit=10)
+            c.company.search(query={"exists": {"field": "domain"}}, cursor=first.next_cursor)
+        assert bodies[0]["query"] == query and "cursor" not in bodies[0]
+        assert bodies[1]["cursor"] == "abc"
+        assert first.next_cursor == "abc"
+
+    async def test_async_search_sends_a_query_object_and_a_cursor(self):
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(200, json={"matches": [], "total": 0, "next_cursor": "abc"})
+
+        query = {"term": {"job_title": "engineer"}}
+        c = AsyncDataLegion(
+            api_key="legion_test",
+            httpx_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        first = await c.person.search(query=query, limit=10)
+        await c.company.search(query={"exists": {"field": "domain"}}, cursor=first.next_cursor)
+        await c.close()
+        assert bodies[0]["query"] == query and "cursor" not in bodies[0]
+        assert bodies[1]["cursor"] == "abc" and first.next_cursor == "abc"
+
+    def test_next_cursor_is_none_when_the_api_sends_none(self):
+        def handler(_request):
+            return httpx.Response(200, json={"matches": [], "total": 0})
+
+        with _mock_client(handler) as c:
+            assert c.person.search(query="SELECT * FROM people").next_cursor is None
+
     async def test_async_search_warning_is_read_and_reset(self):
         responses = iter(
             [
@@ -589,6 +630,27 @@ class TestCompanyBulkEnrich:
         assert isinstance(result, BulkCompanyEnrichResponse)
         assert isinstance(result.results, list)
         assert len(result.results) > 0
+
+
+@requires_api_key
+@integration
+@pytest.mark.flaky(reruns=2, reruns_delay=10)
+class TestSearchByQueryObject:
+    """A query object and a cursor against the live API."""
+
+    def test_a_query_object_pages_by_cursor(self, client):
+        query = {
+            "bool": {"filter": [{"term": {"state": "texas"}}, {"match": {"job_title": "nurse"}}]}
+        }
+        first = client.person.search(query=query, limit=2, include_fields="legion_id")
+        assert len(first.matches) == 2 and first.next_cursor
+        second = client.person.search(
+            query=query, limit=2, cursor=first.next_cursor, include_fields="legion_id"
+        )
+        by_offset = client.person.search(query=query, limit=2, offset=2, include_fields="legion_id")
+        assert [m.person.legion_id for m in second.matches] == [
+            m.person.legion_id for m in by_offset.matches
+        ]
 
 
 @requires_api_key

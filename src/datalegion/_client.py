@@ -264,20 +264,29 @@ class _PersonResource:
     def search(
         self,
         *,
-        query: str,
+        query: str | dict[str, Any],
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> PersonMatchesResponse:
-        """Search for people using a SQL query."""
+        """Search for people with a SQL query or a query object.
+
+        ``query`` is SQL when it is a string and an Elasticsearch-style query
+        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
+        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
+        dict. For deep paging send the previous page's ``next_cursor`` as
+        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -404,20 +413,29 @@ class _CompanyResource:
     def search(
         self,
         *,
-        query: str,
+        query: str | dict[str, Any],
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> CompanyMatchesResponse:
-        """Search for companies using a SQL query."""
+        """Search for companies with a SQL query or a query object.
+
+        ``query`` is SQL when it is a string and an Elasticsearch-style query
+        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
+        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
+        dict. For deep paging send the previous page's ``next_cursor`` as
+        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -718,20 +736,29 @@ class _AsyncPersonResource:
     async def search(
         self,
         *,
-        query: str,
+        query: str | dict[str, Any],
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> PersonMatchesResponse:
-        """Search for people using a SQL query."""
+        """Search for people with a SQL query or a query object.
+
+        ``query`` is SQL when it is a string and an Elasticsearch-style query
+        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
+        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
+        dict. For deep paging send the previous page's ``next_cursor`` as
+        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -860,20 +887,29 @@ class _AsyncCompanyResource:
     async def search(
         self,
         *,
-        query: str,
+        query: str | dict[str, Any],
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> CompanyMatchesResponse:
-        """Search for companies using a SQL query."""
+        """Search for companies with a SQL query or a query object.
+
+        ``query`` is SQL when it is a string and an Elasticsearch-style query
+        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
+        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
+        dict. For deep paging send the previous page's ``next_cursor`` as
+        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
