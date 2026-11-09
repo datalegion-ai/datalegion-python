@@ -447,6 +447,24 @@ class TestRequestCore:
         assert bodies[1]["cursor"] == "abc"
         assert first.next_cursor == "abc"
 
+    async def test_async_search_sends_a_query_object_and_a_cursor(self):
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(200, json={"matches": [], "total": 0, "next_cursor": "abc"})
+
+        query = {"term": {"job_title": "engineer"}}
+        c = AsyncDataLegion(
+            api_key="legion_test",
+            httpx_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        first = await c.person.search(query=query, limit=10)
+        await c.company.search(query={"exists": {"field": "domain"}}, cursor=first.next_cursor)
+        await c.close()
+        assert bodies[0]["query"] == query and "cursor" not in bodies[0]
+        assert bodies[1]["cursor"] == "abc" and first.next_cursor == "abc"
+
     def test_next_cursor_is_none_when_the_api_sends_none(self):
         def handler(_request):
             return httpx.Response(200, json={"matches": [], "total": 0})
@@ -615,7 +633,6 @@ class TestCompanyBulkEnrich:
 
 
 @requires_api_key
-@requires_api_key
 @integration
 @pytest.mark.flaky(reruns=2, reruns_delay=10)
 class TestSearchByQueryObject:
@@ -636,6 +653,7 @@ class TestSearchByQueryObject:
         ]
 
 
+@requires_api_key
 @integration
 @pytest.mark.flaky(reruns=2, reruns_delay=10)
 class TestCompanySearch:
