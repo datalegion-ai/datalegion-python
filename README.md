@@ -46,15 +46,6 @@ print(person.full_name)
 print(person.job_title)
 print(person.company_name)
 
-# Multiple results
-results = client.person.enrich(
-    email="john@example.com",
-    multiple_results=True,
-    limit=5,
-)
-for match in results.matches:
-    print(match.person.full_name, match.match_metadata.match_confidence)
-
 # Enrich by name + company
 person = client.person.enrich(
     first_name="John",
@@ -78,6 +69,39 @@ results = client.person.search(
 for match in results.matches:
     print(match.person.full_name)
 ```
+
+### Query objects and cursors
+
+`query` can also be an Elasticsearch-style query object: `bool` (`must`, `should`, `filter`, `must_not`), `term`, `terms`, `match`, `match_phrase`, `range`, `exists`, `prefix`, `wildcard` and `nested`, on the response's own field names. Equality and prefixes ignore case.
+
+```python
+results = client.person.search(
+    query={
+        "bool": {
+            "filter": [
+                {"term": {"company_name": "google"}},
+                {"match": {"job_title": "engineer"}},
+            ]
+        }
+    },
+    limit=100,
+)
+```
+
+For deep paging and exports, send each page's `next_cursor` back as `cursor` (instead of `offset`). The last page has no `next_cursor`. A cursor belongs to one search on one dataset build, so after a new build, start again from the first page.
+
+```python
+cursor = None
+while True:
+    page = client.person.search(query="SELECT * FROM people WHERE state = 'ohio'", limit=100, cursor=cursor)
+    for match in page.matches:
+        print(match.person.legion_id)
+    cursor = page.next_cursor
+    if not cursor:
+        break
+```
+
+Company search takes the same `query` object and `cursor`.
 
 ## Person Discover
 
@@ -105,11 +129,6 @@ print(company.legion_employee_count)
 
 # By name
 company = client.company.enrich(name="Google")
-
-# Multiple results
-results = client.company.enrich(name="Apple", multiple_results=True, limit=3)
-for match in results.matches:
-    print(match.company.name.cleaned)
 ```
 
 ## Company Search
@@ -250,13 +269,13 @@ print(client.rate_limit_remaining)   # remaining requests in current window
 print(client.rate_limit_reset)       # unix timestamp when window resets
 print(client.rate_limit_policy)      # rate limit policy (e.g. "100/min")
 print(client.retry_after)            # seconds to wait (on 429 responses)
-print(client.generated_query)        # SQL from discover endpoints
+print(client.generated_query)        # SQL from the Discover endpoints
 print(client.correlation_id)         # echoed Correlation-ID
 print(client.total_count_status)     # search/discover: "exact" | "estimate" | "page"
 print(client.search_warning)         # search/discover: why a filter was flagged, or None
 ```
 
-On `search`/`discover`, `total_count_status` tells you how the response `total` was derived: `exact` (true count), `estimate` (the query planner's row estimate — returned on broad queries where an exact count is too expensive, so treat it as a magnitude), or `page` (count unavailable; `total` is just the returned page size).
+On `search`/`discover`, `total_count_status` tells you how the response `total` was derived: `exact` (true count), `estimate` (on broad queries where the exact count runs out of time: the matches counted by then, a lower bound, so read it as "at least"), or `page` (count unavailable; `total` is just the returned page size).
 
 `search_warning` is set when a search flags one of its filters: for example an industry name that no stored value matches (the page comes back empty without being charged). It says what to change.
 
@@ -316,7 +335,7 @@ All exceptions inherit from `DataLegionError` and include these attributes:
 
 ## Sandbox
 
-Pass `sandbox=True` to try the SDK without spending credits. Enrich, bulk enrich, search and discover then return sample records (Jane Sandbox, Sandbox Corp) with every field a real record has; the utilities, which are free anyway, call the real API.
+Pass `sandbox=True` to try the SDK without spending credits. Enrich, Bulk Enrich, Search and Discover then return sample records (Jane Sandbox, Sandbox Corp) with every field a real record has; the utilities, which are free anyway, call the real API.
 
 ```python
 client = DataLegion(api_key="legion_...", sandbox=True)
@@ -324,7 +343,7 @@ person = client.person.enrich(email="anyone@example.com")
 print(person.legion_id)  # "sandbox_person_001"
 ```
 
-Sandbox discover answers only a few fixed example queries; the error lists them. If your API key is limited to certain endpoints, add the `/sandbox/...` ones.
+Sandbox Discover answers only a few fixed example queries; the error lists them. If your API key is limited to certain endpoints, add the `/sandbox/...` ones.
 
 ## Configuration
 

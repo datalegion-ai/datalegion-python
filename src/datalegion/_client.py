@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from importlib.metadata import PackageNotFoundError, version
-from typing import Any, Literal, overload
+from typing import Any
 
 import httpx
 
@@ -138,76 +138,10 @@ def _safe_int(value: str | None) -> int | None:
 
 
 class _PersonResource:
-    """Access person endpoints: enrich, search, discover."""
+    """Access person endpoints: Enrich, Search, Discover."""
 
     def __init__(self, client: DataLegion) -> None:
         self._client = client
-
-    @overload
-    def enrich(
-        self,
-        *,
-        email: str | None = ...,
-        email_hash: str | None = ...,
-        phone: str | None = ...,
-        linkedin_id: str | None = ...,
-        social_url: str | None = ...,
-        legion_id: str | None = ...,
-        npi: str | None = ...,
-        full_name: str | None = ...,
-        first_name: str | None = ...,
-        last_name: str | None = ...,
-        address: str | None = ...,
-        city: str | None = ...,
-        state: str | None = ...,
-        country: str | None = ...,
-        postal_code: str | None = ...,
-        job_title: str | None = ...,
-        company: str | None = ...,
-        school: str | None = ...,
-        birth_date: str | None = ...,
-        multiple_results: Literal[True],
-        limit: int | None = ...,
-        min_confidence: str | None = ...,
-        titlecase: bool | None = ...,
-        required_fields: str | None = ...,
-        include_fields: str | None = ...,
-        exclude_fields: str | None = ...,
-        pretty_print: bool | None = ...,
-    ) -> PersonMatchesResponse: ...
-
-    @overload
-    def enrich(
-        self,
-        *,
-        email: str | None = ...,
-        email_hash: str | None = ...,
-        phone: str | None = ...,
-        linkedin_id: str | None = ...,
-        social_url: str | None = ...,
-        legion_id: str | None = ...,
-        npi: str | None = ...,
-        full_name: str | None = ...,
-        first_name: str | None = ...,
-        last_name: str | None = ...,
-        address: str | None = ...,
-        city: str | None = ...,
-        state: str | None = ...,
-        country: str | None = ...,
-        postal_code: str | None = ...,
-        job_title: str | None = ...,
-        company: str | None = ...,
-        school: str | None = ...,
-        birth_date: str | None = ...,
-        multiple_results: Literal[False] | None = ...,
-        limit: int | None = ...,
-        min_confidence: str | None = ...,
-        titlecase: bool | None = ...,
-        required_fields: str | None = ...,
-        include_fields: str | None = ...,
-        exclude_fields: str | None = ...,
-        pretty_print: bool | None = ...,
-    ) -> PersonResponse: ...
 
     def enrich(
         self,
@@ -231,19 +165,16 @@ class _PersonResource:
         company: str | None = None,
         school: str | None = None,
         birth_date: str | None = None,
-        multiple_results: bool | None = None,
-        limit: int | None = None,
         min_confidence: str | None = None,
         titlecase: bool | None = None,
         required_fields: str | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
-    ) -> PersonResponse | PersonMatchesResponse:
+    ) -> PersonResponse:
         """Enrich a person by email, phone, social URL, name, etc.
 
-        Returns a :class:`PersonResponse` by default, or a
-        :class:`PersonMatchesResponse` when ``multiple_results=True``.
+        Returns the best match as a :class:`PersonResponse`.
 
         ``required_fields`` drops matches missing those fields. Use response field
         names (``"work_email,phones"``), a list subfield (``"emails.type"``), or a
@@ -271,8 +202,6 @@ class _PersonResource:
                 "company": company,
                 "school": school,
                 "birth_date": birth_date,
-                "multiple_results": multiple_results,
-                "limit": limit,
                 "min_confidence": min_confidence,
                 "titlecase": titlecase,
                 "required_fields": required_fields,
@@ -282,16 +211,12 @@ class _PersonResource:
             }
         )
         data = self._client._post("/person/enrich", body)
-        if multiple_results:
-            return PersonMatchesResponse.model_validate(data)
         return PersonResponse.model_validate(_first_match(data, "person"))
 
     def bulk_enrich(
         self,
         items: list[dict[str, Any]],
         *,
-        multiple_results: bool | None = None,
-        limit: int | None = None,
         min_confidence: str | None = None,
         titlecase: bool | None = None,
         required_fields: str | None = None,
@@ -311,8 +236,6 @@ class _PersonResource:
         body = _strip_none(
             {
                 "items": items,
-                "multiple_results": multiple_results,
-                "limit": limit,
                 "min_confidence": min_confidence,
                 "titlecase": titlecase,
                 "required_fields": required_fields,
@@ -343,20 +266,29 @@ class _PersonResource:
     def search(
         self,
         *,
-        query: str,
+        query: str | dict[str, Any],
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> PersonMatchesResponse:
-        """Search for people using a SQL query."""
+        """Search for people with a SQL query or a query object.
+
+        ``query`` is SQL when it is a string and an Elasticsearch-style query
+        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
+        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
+        dict. For deep paging send the previous page's ``next_cursor`` as
+        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -394,52 +326,10 @@ class _PersonResource:
 
 
 class _CompanyResource:
-    """Access company endpoints: enrich, search, discover."""
+    """Access company endpoints: Enrich, Search, Discover."""
 
     def __init__(self, client: DataLegion) -> None:
         self._client = client
-
-    @overload
-    def enrich(
-        self,
-        *,
-        legion_id: str | None = ...,
-        domain: str | None = ...,
-        name: str | None = ...,
-        linkedin_id: str | None = ...,
-        social_url: str | None = ...,
-        ticker_symbol: str | None = ...,
-        industry: str | None = ...,
-        multiple_results: Literal[True],
-        limit: int | None = ...,
-        min_confidence: str | None = ...,
-        titlecase: bool | None = ...,
-        required_fields: str | None = ...,
-        include_fields: str | None = ...,
-        exclude_fields: str | None = ...,
-        pretty_print: bool | None = ...,
-    ) -> CompanyMatchesResponse: ...
-
-    @overload
-    def enrich(
-        self,
-        *,
-        legion_id: str | None = ...,
-        domain: str | None = ...,
-        name: str | None = ...,
-        linkedin_id: str | None = ...,
-        social_url: str | None = ...,
-        ticker_symbol: str | None = ...,
-        industry: str | None = ...,
-        multiple_results: Literal[False] | None = ...,
-        limit: int | None = ...,
-        min_confidence: str | None = ...,
-        titlecase: bool | None = ...,
-        required_fields: str | None = ...,
-        include_fields: str | None = ...,
-        exclude_fields: str | None = ...,
-        pretty_print: bool | None = ...,
-    ) -> CompanyResponse: ...
 
     def enrich(
         self,
@@ -451,19 +341,16 @@ class _CompanyResource:
         social_url: str | None = None,
         ticker_symbol: str | None = None,
         industry: str | None = None,
-        multiple_results: bool | None = None,
-        limit: int | None = None,
         min_confidence: str | None = None,
         titlecase: bool | None = None,
         required_fields: str | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
-    ) -> CompanyResponse | CompanyMatchesResponse:
+    ) -> CompanyResponse:
         """Enrich a company by domain, name, LinkedIn ID, etc.
 
-        Returns a :class:`CompanyResponse` by default, or a
-        :class:`CompanyMatchesResponse` when ``multiple_results=True``.
+        Returns the best match as a :class:`CompanyResponse`.
 
         ``required_fields`` drops matches missing those fields. Use response field
         names (``"domain,socials"``), a list subfield (``"socials.network"``), or a
@@ -479,8 +366,6 @@ class _CompanyResource:
                 "social_url": social_url,
                 "ticker_symbol": ticker_symbol,
                 "industry": industry,
-                "multiple_results": multiple_results,
-                "limit": limit,
                 "min_confidence": min_confidence,
                 "titlecase": titlecase,
                 "required_fields": required_fields,
@@ -490,16 +375,12 @@ class _CompanyResource:
             }
         )
         data = self._client._post("/company/enrich", body)
-        if multiple_results:
-            return CompanyMatchesResponse.model_validate(data)
         return CompanyResponse.model_validate(_first_match(data, "company"))
 
     def bulk_enrich(
         self,
         items: list[dict[str, Any]],
         *,
-        multiple_results: bool | None = None,
-        limit: int | None = None,
         min_confidence: str | None = None,
         titlecase: bool | None = None,
         required_fields: str | None = None,
@@ -519,8 +400,6 @@ class _CompanyResource:
         body = _strip_none(
             {
                 "items": items,
-                "multiple_results": multiple_results,
-                "limit": limit,
                 "min_confidence": min_confidence,
                 "titlecase": titlecase,
                 "required_fields": required_fields,
@@ -536,20 +415,29 @@ class _CompanyResource:
     def search(
         self,
         *,
-        query: str,
+        query: str | dict[str, Any],
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> CompanyMatchesResponse:
-        """Search for companies using a SQL query."""
+        """Search for companies with a SQL query or a query object.
+
+        ``query`` is SQL when it is a string and an Elasticsearch-style query
+        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
+        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
+        dict. For deep paging send the previous page's ``next_cursor`` as
+        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -722,76 +610,10 @@ class _UtilityResource:
 
 
 class _AsyncPersonResource:
-    """Access person endpoints (async): enrich, search, discover."""
+    """Access person endpoints (async): Enrich, Search, Discover."""
 
     def __init__(self, client: AsyncDataLegion) -> None:
         self._client = client
-
-    @overload
-    async def enrich(
-        self,
-        *,
-        email: str | None = ...,
-        email_hash: str | None = ...,
-        phone: str | None = ...,
-        linkedin_id: str | None = ...,
-        social_url: str | None = ...,
-        legion_id: str | None = ...,
-        npi: str | None = ...,
-        full_name: str | None = ...,
-        first_name: str | None = ...,
-        last_name: str | None = ...,
-        address: str | None = ...,
-        city: str | None = ...,
-        state: str | None = ...,
-        country: str | None = ...,
-        postal_code: str | None = ...,
-        job_title: str | None = ...,
-        company: str | None = ...,
-        school: str | None = ...,
-        birth_date: str | None = ...,
-        multiple_results: Literal[True],
-        limit: int | None = ...,
-        min_confidence: str | None = ...,
-        titlecase: bool | None = ...,
-        required_fields: str | None = ...,
-        include_fields: str | None = ...,
-        exclude_fields: str | None = ...,
-        pretty_print: bool | None = ...,
-    ) -> PersonMatchesResponse: ...
-
-    @overload
-    async def enrich(
-        self,
-        *,
-        email: str | None = ...,
-        email_hash: str | None = ...,
-        phone: str | None = ...,
-        linkedin_id: str | None = ...,
-        social_url: str | None = ...,
-        legion_id: str | None = ...,
-        npi: str | None = ...,
-        full_name: str | None = ...,
-        first_name: str | None = ...,
-        last_name: str | None = ...,
-        address: str | None = ...,
-        city: str | None = ...,
-        state: str | None = ...,
-        country: str | None = ...,
-        postal_code: str | None = ...,
-        job_title: str | None = ...,
-        company: str | None = ...,
-        school: str | None = ...,
-        birth_date: str | None = ...,
-        multiple_results: Literal[False] | None = ...,
-        limit: int | None = ...,
-        min_confidence: str | None = ...,
-        titlecase: bool | None = ...,
-        required_fields: str | None = ...,
-        include_fields: str | None = ...,
-        exclude_fields: str | None = ...,
-        pretty_print: bool | None = ...,
-    ) -> PersonResponse: ...
 
     async def enrich(
         self,
@@ -815,19 +637,16 @@ class _AsyncPersonResource:
         company: str | None = None,
         school: str | None = None,
         birth_date: str | None = None,
-        multiple_results: bool | None = None,
-        limit: int | None = None,
         min_confidence: str | None = None,
         titlecase: bool | None = None,
         required_fields: str | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
-    ) -> PersonResponse | PersonMatchesResponse:
+    ) -> PersonResponse:
         """Enrich a person by email, phone, social URL, name, etc.
 
-        Returns a :class:`PersonResponse` by default, or a
-        :class:`PersonMatchesResponse` when ``multiple_results=True``.
+        Returns the best match as a :class:`PersonResponse`.
 
         ``required_fields`` drops matches missing those fields. Use response field
         names (``"work_email,phones"``), a list subfield (``"emails.type"``), or a
@@ -855,8 +674,6 @@ class _AsyncPersonResource:
                 "company": company,
                 "school": school,
                 "birth_date": birth_date,
-                "multiple_results": multiple_results,
-                "limit": limit,
                 "min_confidence": min_confidence,
                 "titlecase": titlecase,
                 "required_fields": required_fields,
@@ -866,16 +683,12 @@ class _AsyncPersonResource:
             }
         )
         data = await self._client._post("/person/enrich", body)
-        if multiple_results:
-            return PersonMatchesResponse.model_validate(data)
         return PersonResponse.model_validate(_first_match(data, "person"))
 
     async def bulk_enrich(
         self,
         items: list[dict[str, Any]],
         *,
-        multiple_results: bool | None = None,
-        limit: int | None = None,
         min_confidence: str | None = None,
         titlecase: bool | None = None,
         required_fields: str | None = None,
@@ -895,8 +708,6 @@ class _AsyncPersonResource:
         body = _strip_none(
             {
                 "items": items,
-                "multiple_results": multiple_results,
-                "limit": limit,
                 "min_confidence": min_confidence,
                 "titlecase": titlecase,
                 "required_fields": required_fields,
@@ -929,20 +740,29 @@ class _AsyncPersonResource:
     async def search(
         self,
         *,
-        query: str,
+        query: str | dict[str, Any],
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> PersonMatchesResponse:
-        """Search for people using a SQL query."""
+        """Search for people with a SQL query or a query object.
+
+        ``query`` is SQL when it is a string and an Elasticsearch-style query
+        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
+        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
+        dict. For deep paging send the previous page's ``next_cursor`` as
+        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -982,52 +802,10 @@ class _AsyncPersonResource:
 
 
 class _AsyncCompanyResource:
-    """Access company endpoints (async): enrich, search, discover."""
+    """Access company endpoints (async): Enrich, Search, Discover."""
 
     def __init__(self, client: AsyncDataLegion) -> None:
         self._client = client
-
-    @overload
-    async def enrich(
-        self,
-        *,
-        legion_id: str | None = ...,
-        domain: str | None = ...,
-        name: str | None = ...,
-        linkedin_id: str | None = ...,
-        social_url: str | None = ...,
-        ticker_symbol: str | None = ...,
-        industry: str | None = ...,
-        multiple_results: Literal[True],
-        limit: int | None = ...,
-        min_confidence: str | None = ...,
-        titlecase: bool | None = ...,
-        required_fields: str | None = ...,
-        include_fields: str | None = ...,
-        exclude_fields: str | None = ...,
-        pretty_print: bool | None = ...,
-    ) -> CompanyMatchesResponse: ...
-
-    @overload
-    async def enrich(
-        self,
-        *,
-        legion_id: str | None = ...,
-        domain: str | None = ...,
-        name: str | None = ...,
-        linkedin_id: str | None = ...,
-        social_url: str | None = ...,
-        ticker_symbol: str | None = ...,
-        industry: str | None = ...,
-        multiple_results: Literal[False] | None = ...,
-        limit: int | None = ...,
-        min_confidence: str | None = ...,
-        titlecase: bool | None = ...,
-        required_fields: str | None = ...,
-        include_fields: str | None = ...,
-        exclude_fields: str | None = ...,
-        pretty_print: bool | None = ...,
-    ) -> CompanyResponse: ...
 
     async def enrich(
         self,
@@ -1039,19 +817,16 @@ class _AsyncCompanyResource:
         social_url: str | None = None,
         ticker_symbol: str | None = None,
         industry: str | None = None,
-        multiple_results: bool | None = None,
-        limit: int | None = None,
         min_confidence: str | None = None,
         titlecase: bool | None = None,
         required_fields: str | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
-    ) -> CompanyResponse | CompanyMatchesResponse:
+    ) -> CompanyResponse:
         """Enrich a company by domain, name, LinkedIn ID, etc.
 
-        Returns a :class:`CompanyResponse` by default, or a
-        :class:`CompanyMatchesResponse` when ``multiple_results=True``.
+        Returns the best match as a :class:`CompanyResponse`.
 
         ``required_fields`` drops matches missing those fields. Use response field
         names (``"domain,socials"``), a list subfield (``"socials.network"``), or a
@@ -1067,8 +842,6 @@ class _AsyncCompanyResource:
                 "social_url": social_url,
                 "ticker_symbol": ticker_symbol,
                 "industry": industry,
-                "multiple_results": multiple_results,
-                "limit": limit,
                 "min_confidence": min_confidence,
                 "titlecase": titlecase,
                 "required_fields": required_fields,
@@ -1078,16 +851,12 @@ class _AsyncCompanyResource:
             }
         )
         data = await self._client._post("/company/enrich", body)
-        if multiple_results:
-            return CompanyMatchesResponse.model_validate(data)
         return CompanyResponse.model_validate(_first_match(data, "company"))
 
     async def bulk_enrich(
         self,
         items: list[dict[str, Any]],
         *,
-        multiple_results: bool | None = None,
-        limit: int | None = None,
         min_confidence: str | None = None,
         titlecase: bool | None = None,
         required_fields: str | None = None,
@@ -1107,8 +876,6 @@ class _AsyncCompanyResource:
         body = _strip_none(
             {
                 "items": items,
-                "multiple_results": multiple_results,
-                "limit": limit,
                 "min_confidence": min_confidence,
                 "titlecase": titlecase,
                 "required_fields": required_fields,
@@ -1124,20 +891,29 @@ class _AsyncCompanyResource:
     async def search(
         self,
         *,
-        query: str,
+        query: str | dict[str, Any],
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> CompanyMatchesResponse:
-        """Search for companies using a SQL query."""
+        """Search for companies with a SQL query or a query object.
+
+        ``query`` is SQL when it is a string and an Elasticsearch-style query
+        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
+        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
+        dict. For deep paging send the previous page's ``next_cursor`` as
+        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -1402,14 +1178,14 @@ class DataLegion:
         self.retry_after = _safe_int(response.headers.get("Retry-After"))
         self.correlation_id = response.headers.get("Correlation-ID")
         # search/discover only: "exact" | "estimate" | "page" — how `total` was
-        # derived. `estimate` means broad-query planner estimate (magnitude only).
+        # derived. `estimate` means the count ran out of time: a lower bound.
         self.total_count_status = response.headers.get("Total-Count-Status")
         # search/discover only: why a filter was flagged (for example an industry
         # name no stored value matches) and what to change. None when absent.
         self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
-        """Extract generated_query from response body (discover endpoints)."""
+        """Extract generated_query from response body (Discover endpoints)."""
         self.generated_query = data.get("generated_query")
 
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -1553,14 +1329,14 @@ class AsyncDataLegion:
         self.retry_after = _safe_int(response.headers.get("Retry-After"))
         self.correlation_id = response.headers.get("Correlation-ID")
         # search/discover only: "exact" | "estimate" | "page" — how `total` was
-        # derived. `estimate` means broad-query planner estimate (magnitude only).
+        # derived. `estimate` means the count ran out of time: a lower bound.
         self.total_count_status = response.headers.get("Total-Count-Status")
         # search/discover only: why a filter was flagged (for example an industry
         # name no stored value matches) and what to change. None when absent.
         self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
-        """Extract generated_query from response body (discover endpoints)."""
+        """Extract generated_query from response body (Discover endpoints)."""
         self.generated_query = data.get("generated_query")
 
     async def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:

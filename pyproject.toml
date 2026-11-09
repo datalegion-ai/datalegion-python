@@ -1,6 +1,6 @@
 [project]
 name = "datalegion"
-version = "0.11.0"
+version = "0.13.0"
 description = "Python client for the Data Legion API"
 authors = [{name = "Data Legion", email = "engineering@datalegion.ai"}]
 requires-python = ">=3.11"
@@ -97,3 +97,9 @@ env_files = [".env"]
 markers = [
     "integration: tests that call the real Data Legion API",
 ]
+
+[tool.uv]
+# 0.11.8 writes the lock's sentinel form for a relative exclude-newer (below).
+required-version = ">=0.11.8"
+# The fleet's one-day cooldown: no release under 24 h old is resolved, by any uv command here.
+exclude-newer = "1 day"

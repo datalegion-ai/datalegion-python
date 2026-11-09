@@ -5,6 +5,7 @@ doesn't depend on datalegion-shared, so ``_conventions.py`` is a byte-identical 
 header naming the release it came from. Both read the git index, so the sdist leaves them out.
 """
 
+import tomllib
 from pathlib import Path
 
 from tests import _conventions as conventions
@@ -27,3 +28,11 @@ def test_no_two_tests_share_a_body() -> None:
 def test_the_vendored_copy_names_its_release() -> None:
     header = Path(conventions.__file__).read_text().splitlines()[0]
     assert header.startswith("# Vendored from datalegion-shared v")
+
+
+def test_uv_resolves_no_release_under_a_day_old():
+    """A one-day cooldown: uv resolves no release under 24 hours old."""
+    uv = tomllib.loads((REPO / "pyproject.toml").read_text())["tool"]["uv"]
+    assert uv["required-version"] == ">=0.11.8"  # the first uv writing the lock's relative form
+    assert uv["exclude-newer"] == "1 day"
+    assert 'exclude-newer-span = "P1D"' in (REPO / "uv.lock").read_text()

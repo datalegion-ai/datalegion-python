@@ -194,15 +194,6 @@ class TestPersonEnrich:
         assert result.first_name is not None
         assert result.last_name is not None
 
-    def test_enrich_multiple_results(self, sandbox_client):
-        """Enrich with multiple_results returns a PersonMatchesResponse."""
-        result = sandbox_client.person.enrich(social_url=MADE_UP_PROFILE, multiple_results=True)
-        assert isinstance(result, PersonMatchesResponse)
-        assert isinstance(result.total, int)
-        assert isinstance(result.matches, list)
-        assert len(result.matches) > 0
-        assert isinstance(result.matches[0].person, PersonResponse)
-
     def test_enrich_response_headers(self, sandbox_client):
         """Response headers are populated after a request."""
         sandbox_client.person.enrich(social_url=MADE_UP_PROFILE)
@@ -440,6 +431,47 @@ class TestRequestCore:
         assert ["limit" in b for b in bodies] == [False, False, False, False, True]
         assert bodies[-1]["limit"] == 25
 
+    def test_search_sends_a_query_object_and_a_cursor_and_reads_next_cursor(self):
+        """A dict query goes as JSON, cursor rides in the body, next_cursor comes back."""
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(200, json={"matches": [], "total": 0, "next_cursor": "abc"})
+
+        query = {"bool": {"filter": [{"term": {"job_title": "engineer"}}]}}
+        with _mock_client(handler) as c:
+            first = c.person.search(query=query, limit=10)
+            c.company.search(query={"exists": {"field": "domain"}}, cursor=first.next_cursor)
+        assert bodies[0]["query"] == query and "cursor" not in bodies[0]
+        assert bodies[1]["cursor"] == "abc"
+        assert first.next_cursor == "abc"
+
+    async def test_async_search_sends_a_query_object_and_a_cursor(self):
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(200, json={"matches": [], "total": 0, "next_cursor": "abc"})
+
+        query = {"term": {"job_title": "engineer"}}
+        c = AsyncDataLegion(
+            api_key="legion_test",
+            httpx_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        first = await c.person.search(query=query, limit=10)
+        await c.company.search(query={"exists": {"field": "domain"}}, cursor=first.next_cursor)
+        await c.close()
+        assert bodies[0]["query"] == query and "cursor" not in bodies[0]
+        assert bodies[1]["cursor"] == "abc" and first.next_cursor == "abc"
+
+    def test_next_cursor_is_none_when_the_api_sends_none(self):
+        def handler(_request):
+            return httpx.Response(200, json={"matches": [], "total": 0})
+
+        with _mock_client(handler) as c:
+            assert c.person.search(query="SELECT * FROM people").next_cursor is None
+
     async def test_async_search_warning_is_read_and_reset(self):
         responses = iter(
             [
@@ -598,6 +630,27 @@ class TestCompanyBulkEnrich:
         assert isinstance(result, BulkCompanyEnrichResponse)
         assert isinstance(result.results, list)
         assert len(result.results) > 0
+
+
+@requires_api_key
+@integration
+@pytest.mark.flaky(reruns=2, reruns_delay=10)
+class TestSearchByQueryObject:
+    """A query object and a cursor against the live API."""
+
+    def test_a_query_object_pages_by_cursor(self, client):
+        query = {
+            "bool": {"filter": [{"term": {"state": "texas"}}, {"match": {"job_title": "nurse"}}]}
+        }
+        first = client.person.search(query=query, limit=2, include_fields="legion_id")
+        assert len(first.matches) == 2 and first.next_cursor
+        second = client.person.search(
+            query=query, limit=2, cursor=first.next_cursor, include_fields="legion_id"
+        )
+        by_offset = client.person.search(query=query, limit=2, offset=2, include_fields="legion_id")
+        assert [m.person.legion_id for m in second.matches] == [
+            m.person.legion_id for m in by_offset.matches
+        ]
 
 
 @requires_api_key
@@ -1041,3 +1094,21 @@ class TestSandbox:
             company = c.company.enrich(domain="example.org")
         assert person.legion_id.startswith("sandbox_")
         assert company.legion_id.startswith("sandbox_")
+
+
+def test_enrich_takes_no_multiple_results():
+    """Enrich answers one best match: neither multiple_results nor limit is a parameter."""
+    import inspect
+
+    from datalegion import AsyncDataLegion, DataLegion
+
+    for client_cls in (DataLegion, AsyncDataLegion):
+        client = client_cls(api_key="legion_test")
+        for method in (
+            client.person.enrich,
+            client.company.enrich,
+            client.person.bulk_enrich,
+            client.company.bulk_enrich,
+        ):
+            params = inspect.signature(method).parameters
+            assert "multiple_results" not in params and "limit" not in params
