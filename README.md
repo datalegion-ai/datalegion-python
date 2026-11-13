@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://www.datalegion.ai/logo-light.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://www.datalegion.ai/logo-dark.svg">
-    <img alt="Data Legion" src="https://www.datalegion.ai/logo-dark.svg" width="260">
+    <source media="(prefers-color-scheme: dark)" srcset="https://www.datalegion.ai/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://www.datalegion.ai/logo-light.svg">
+    <img alt="Data Legion" src="https://www.datalegion.ai/logo-light.svg" width="260">
   </picture>
 </p>
 
@@ -275,7 +275,7 @@ print(client.total_count_status)     # search/discover: "exact" | "estimate" | "
 print(client.search_warning)         # search/discover: why a filter was flagged, or None
 ```
 
-On `search`/`discover`, `total_count_status` tells you how the response `total` was derived: `exact` (true count), `estimate` (on broad queries where the exact count runs out of time: the matches counted by then, a lower bound, so read it as "at least"), or `page` (count unavailable; `total` is just the returned page size).
+On `search`/`discover`, `total_count_status` tells you how the response `total` was derived: `exact` (true count), `estimate` (on broad queries where the exact count runs out of time: the matches counted by then, a lower bound, so read it as "at least"), or `page` (count unavailable; `total` is the offset plus the rows returned).
 
 `search_warning` is set when a search flags one of its filters: for example an industry name that no stored value matches (the page comes back empty without being charged). It says what to change.
 

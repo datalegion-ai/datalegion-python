@@ -28,7 +28,7 @@ uv run pytest tests/ # Run tests (requires DATALEGION_API_KEY)
 ## Code Style
 
 - Follow existing patterns in the codebase
-- Minimal dependencies — httpx and pydantic only
+- Minimal dependencies: httpx, pydantic and certifi only
 
 ## Reporting Issues
 
