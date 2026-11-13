@@ -204,6 +204,10 @@ class PersonResponse(_Base):
     linkedin_followers: int | None = None
     linkedin_connections: int | None = None
 
+    # NPI
+    npi: str | None = None
+    npi_last_updated: str | None = None
+
     # Narrative
     headline: CleanedRaw | None = None
     summary: CleanedRaw | None = None
