@@ -55,6 +55,10 @@ person = client.person.enrich(
 
 # Enrich by LinkedIn URL
 person = client.person.enrich(social_url="https://linkedin.com/in/johndoe")
+
+# Enrich a US healthcare provider by NPI (your plan must include NPI)
+person = client.person.enrich(npi="1234567893")
+print(person.npi, person.npi_last_updated)
 ```
 
 ## Person Search
