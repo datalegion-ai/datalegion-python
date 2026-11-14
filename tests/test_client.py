@@ -465,6 +465,45 @@ class TestRequestCore:
         assert bodies[0]["query"] == query and "cursor" not in bodies[0]
         assert bodies[1]["cursor"] == "abc" and first.next_cursor == "abc"
 
+    def test_discover_sends_a_cursor_and_reads_next_cursor(self):
+        """Discover pages by cursor too: the next page reruns the first page's search."""
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "matches": [],
+                    "total": 0,
+                    "next_cursor": "abc",
+                    "generated_query": "SELECT * FROM people",
+                },
+            )
+
+        with _mock_client(handler) as c:
+            first = c.person.discover(query="nurses in Ohio", limit=10)
+            c.person.discover(query="nurses in Ohio", cursor=first.next_cursor)
+            c.company.discover(query="banks in Ohio", cursor="xyz")
+        assert "cursor" not in bodies[0] and first.next_cursor == "abc"
+        assert bodies[1]["cursor"] == "abc" and bodies[2]["cursor"] == "xyz"
+
+    async def test_async_discover_sends_a_cursor(self):
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(200, json={"matches": [], "total": 0, "next_cursor": None})
+
+        c = AsyncDataLegion(
+            api_key="legion_test",
+            httpx_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        await c.person.discover(query="nurses in Ohio", cursor="abc")
+        await c.company.discover(query="banks in Ohio", cursor="xyz")
+        await c.close()
+        assert [b["cursor"] for b in bodies] == ["abc", "xyz"]
+
     def test_next_cursor_is_none_when_the_api_sends_none(self):
         def handler(_request):
             return httpx.Response(200, json={"matches": [], "total": 0})

@@ -303,17 +303,23 @@ class _PersonResource:
         query: str,
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> PersonMatchesResponse:
-        """Discover people using a natural language query."""
+        """Discover people using a natural language query.
+
+        For the next page, send the previous page's ``next_cursor`` as ``cursor`` (without ``offset``) with the
+        same ``query``: it reruns the same search, past 10,000 results too. The last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -452,17 +458,23 @@ class _CompanyResource:
         query: str,
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> CompanyMatchesResponse:
-        """Discover companies using a natural language query."""
+        """Discover companies using a natural language query.
+
+        For the next page, send the previous page's ``next_cursor`` as ``cursor`` (without ``offset``) with the
+        same ``query``: it reruns the same search, past 10,000 results too. The last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -779,17 +791,23 @@ class _AsyncPersonResource:
         query: str,
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> PersonMatchesResponse:
-        """Discover people using a natural language query."""
+        """Discover people using a natural language query.
+
+        For the next page, send the previous page's ``next_cursor`` as ``cursor`` (without ``offset``) with the
+        same ``query``: it reruns the same search, past 10,000 results too. The last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
@@ -930,17 +948,23 @@ class _AsyncCompanyResource:
         query: str,
         limit: int | None = None,
         offset: int | None = None,
+        cursor: str | None = None,
         titlecase: bool | None = None,
         include_fields: str | None = None,
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> CompanyMatchesResponse:
-        """Discover companies using a natural language query."""
+        """Discover companies using a natural language query.
+
+        For the next page, send the previous page's ``next_cursor`` as ``cursor`` (without ``offset``) with the
+        same ``query``: it reruns the same search, past 10,000 results too. The last page has no ``next_cursor``.
+        """
         body = _strip_none(
             {
                 "query": query,
                 "limit": limit,
                 "offset": offset,
+                "cursor": cursor,
                 "titlecase": titlecase,
                 "include_fields": include_fields,
                 "exclude_fields": exclude_fields,
