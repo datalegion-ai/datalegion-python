@@ -119,11 +119,15 @@ for match in results.matches:
 For the next page, send `next_cursor` back as `cursor` with the same `query`: it reruns the same search, past 10,000 results too. Company discover pages the same way.
 
 ```python
-page = client.person.discover(query="engineers in San Francisco who worked at Google", limit=100)
-while page.next_cursor:
-    page = client.person.discover(
-        query="engineers in San Francisco who worked at Google", limit=100, cursor=page.next_cursor
-    )
+query = "engineers in San Francisco who worked at Google"
+cursor = None
+while True:
+    page = client.person.discover(query=query, limit=100, cursor=cursor)
+    for match in page.matches:
+        print(match.person.legion_id)
+    cursor = page.next_cursor
+    if not cursor:
+        break
 ```
 
 ## Company Enrichment
