@@ -123,7 +123,7 @@ Company search takes the same inputs and `cursor`.
 
 ### Count before you search
 
-`count` takes what `search` takes and returns how many records match, rounded, without returning any. It is free.
+`count` takes what `search` takes and returns how many records match, rounded, without returning any. It is free and works with zero credits left: it needs an active plan that includes search, not a balance.
 
 ```python
 counted = client.person.count(filters={"job_title": "nurse practitioner", "state_code": "TX"})
