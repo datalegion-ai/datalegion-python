@@ -1123,7 +1123,7 @@ class TestSandbox:
         assert sorted(SANDBOX_PATHS) == sorted(
             f"/{e}/{op}"
             for e in ("person", "company")
-            for op in ("enrich", "enrich/bulk", "search", "discover")
+            for op in ("enrich", "enrich/bulk", "search", "search/count", "discover")
         )
 
     @requires_api_key
@@ -1151,3 +1151,109 @@ def test_enrich_takes_no_multiple_results():
         ):
             params = inspect.signature(method).parameters
             assert "multiple_results" not in params and "limit" not in params
+
+
+class TestSearchInputsCountAndCredits:
+    """filters, sql and es_query; the free count; the credit balance: mocked, no live API key needed."""
+
+    def test_search_sends_each_input_by_its_own_name(self):
+        bodies = []
+
+        def handler(request):
+            bodies.append(json.loads(request.content))
+            return httpx.Response(200, json={"matches": [], "total": 0})
+
+        with _mock_client(handler) as c:
+            c.person.search(filters={"job_title": "nurse", "state_code": ["TX"]})
+            c.person.search(sql="SELECT * FROM people WHERE state = 'ohio'")
+            c.company.search(es_query={"term": {"domain": "stripe.com"}})
+            c.company.search(query="SELECT * FROM companies")  # the older form still works
+        assert bodies[0] == {"filters": {"job_title": "nurse", "state_code": ["TX"]}}
+        assert bodies[1] == {"sql": "SELECT * FROM people WHERE state = 'ohio'"}
+        assert bodies[2] == {"es_query": {"term": {"domain": "stripe.com"}}}
+        assert bodies[3] == {"query": "SELECT * FROM companies"}
+
+    def test_search_by_filters_reads_the_generated_query(self):
+        compiled = {"term": {"state_code": "TX"}}
+
+        def handler(_request):
+            return httpx.Response(
+                200, json={"matches": [], "total": 0, "generated_query": compiled}
+            )
+
+        with _mock_client(handler) as c:
+            c.person.search(filters={"state_code": "TX"})
+            assert c.generated_query == compiled
+
+    def test_count_posts_to_the_count_route_and_reads_the_total(self):
+        calls = []
+
+        def handler(request):
+            calls.append((request.url.path, json.loads(request.content)))
+            return httpx.Response(200, json={"total": 1200, "total_status": "about"})
+
+        with _mock_client(handler) as c:
+            person = c.person.count(filters={"job_title": "nurse"})
+            company = c.company.count(sql="SELECT * FROM companies WHERE industry = 'banking'")
+        assert calls == [
+            ("/person/search/count", {"filters": {"job_title": "nurse"}}),
+            (
+                "/company/search/count",
+                {"sql": "SELECT * FROM companies WHERE industry = 'banking'"},
+            ),
+        ]
+        assert (person.total, person.total_status) == (1200, "about")
+        assert company.generated_query is None
+
+    def test_sandbox_routes_the_count(self):
+        paths = []
+
+        def handler(request):
+            paths.append(request.url.path)
+            return httpx.Response(200, json={"total": 10, "total_status": "under"})
+
+        c = DataLegion(
+            api_key="legion_test",
+            sandbox=True,
+            httpx_client=httpx.Client(transport=httpx.MockTransport(handler)),
+        )
+        c.person.count(filters={"city": "austin"})
+        c.close()
+        assert paths == ["/sandbox/person/search/count"]
+
+    def test_credits_balance(self):
+        def handler(request):
+            assert (request.method, request.url.path) == ("GET", "/credits")
+            return httpx.Response(
+                200,
+                json={
+                    "team": {"team_id": 1, "team_name": "Acme"},
+                    "contracts": [
+                        {"endpoint": "/person", "credits_remaining": 380.0, "is_unlimited": False}
+                    ],
+                },
+            )
+
+        with _mock_client(handler) as c:
+            balance = c.credits.balance()
+        assert balance.contracts[0].credits_remaining == 380.0
+        assert balance.contracts[0].endpoint == "/person"
+
+    async def test_async_count_and_credits(self):
+        calls = []
+
+        def handler(request):
+            calls.append((request.method, request.url.path))
+            if request.url.path == "/credits":
+                return httpx.Response(200, json={"contracts": []})
+            return httpx.Response(200, json={"total": 40, "total_status": "about"})
+
+        c = AsyncDataLegion(
+            api_key="legion_test",
+            httpx_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        counted = await c.company.count(es_query={"term": {"type": "public"}})
+        balance = await c.credits.balance()
+        await c.close()
+        assert calls == [("POST", "/company/search/count"), ("GET", "/credits")]
+        assert counted.total == 40 and balance.contracts == []
