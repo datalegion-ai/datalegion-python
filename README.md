@@ -63,31 +63,45 @@ print(person.npi, person.npi_last_updated)
 
 ## Person Search
 
-Search for people using SQL queries. `limit` is optional: without it the API returns one result (max 100).
+Search with exactly one of `filters`, `sql` or `es_query`. `limit` is optional: without it the API returns one result (max 100).
+
+`filters` uses the record's own field names, the ones every response carries. A value or a list (any of them), `{"gte": ..., "lte": ...}` for a range, `{"exists": True}` for a filled field; every field given must hold.
 
 ```python
 results = client.person.search(
-    query="SELECT * FROM people WHERE company_name ILIKE '%google%' AND city = 'San Francisco'",
+    filters={"job_title": ["vp of sales", "head of sales"], "state_code": "TX"},
     limit=10,
 )
 for match in results.matches:
     print(match.person.full_name)
+print(client.generated_query)  # the query object the filters compiled to
 ```
 
-### Query objects and cursors
-
-`query` can also be an Elasticsearch-style query object: `bool` (`must`, `should`, `filter`, `must_not`), `term`, `terms`, `match`, `match_phrase`, `range`, `exists`, `prefix`, `wildcard` and `nested`, on the response's own field names. Equality and prefixes ignore case.
+Combine sets of fields with `{"and": [...]}`, `{"or": [...]}` or `{"not": {...}}`, and search the profile text with a Boolean `keywords` string (`AND`, `OR`, `NOT` in capitals, "quoted phrases", parentheses):
 
 ```python
 results = client.person.search(
-    query={
-        "bool": {
-            "filter": [
-                {"term": {"company_name": "google"}},
-                {"match": {"job_title": "engineer"}},
-            ]
-        }
+    filters={
+        "and": [
+            {"keywords": '("data engineer" OR "analytics engineer") AND python NOT intern'},
+            {"or": [{"state_code": "TX"}, {"city": "boston"}]},
+        ]
     },
+    limit=10,
+)
+```
+
+### SQL, query objects and cursors
+
+`sql` takes a `SELECT * FROM people WHERE ...` statement (no `LIMIT` or `OFFSET`: use `limit` and `offset`). `es_query` takes an Elasticsearch-style query object: `bool` (`must`, `should`, `filter`, `must_not`), `term`, `terms`, `match`, `match_phrase`, `range`, `exists`, `prefix`, `wildcard` and `nested`, on the response's own field names. The older `query` argument still works.
+
+```python
+results = client.person.search(
+    sql="SELECT * FROM people WHERE company_name ILIKE '%google%' AND city = 'San Francisco'",
+    limit=10,
+)
+results = client.person.search(
+    es_query={"bool": {"filter": [{"term": {"company_name": "google"}}, {"match": {"job_title": "engineer"}}]}},
     limit=100,
 )
 ```
@@ -97,7 +111,7 @@ For deep paging and exports, send each page's `next_cursor` back as `cursor` (in
 ```python
 cursor = None
 while True:
-    page = client.person.search(query="SELECT * FROM people WHERE state = 'ohio'", limit=100, cursor=cursor)
+    page = client.person.search(filters={"state_code": "OH"}, limit=100, cursor=cursor)
     for match in page.matches:
         print(match.person.legion_id)
     cursor = page.next_cursor
@@ -105,7 +119,18 @@ while True:
         break
 ```
 
-Company search takes the same `query` object and `cursor`.
+Company search takes the same inputs and `cursor`.
+
+### Count before you search
+
+`count` takes what `search` takes and returns how many records match, rounded, without returning any. It is free.
+
+```python
+counted = client.person.count(filters={"job_title": "nurse practitioner", "state_code": "TX"})
+print(counted.total, counted.total_status)  # 16000 about
+```
+
+`total_status` is `about` (the rounded count), `at_least` (counting ran out of time: a lower bound) or `under` (fewer than 10, possibly none). Counts are limited to 10 a minute and 200 an hour.
 
 ## Person Discover
 
@@ -151,15 +176,17 @@ company = client.company.enrich(name="Google")
 
 ## Company Search
 
-Search for companies using SQL queries.
+Search for companies with `filters`, `sql` or `es_query`, as person search does.
 
 ```python
 results = client.company.search(
-    query="SELECT * FROM companies WHERE industry = 'software development'",
+    filters={"industry": "software development", "locations.city": "austin", "locations.primary": True},
     limit=10,
 )
 for match in results.matches:
     print(match.company.name.cleaned)
+
+counted = client.company.count(sql="SELECT * FROM companies WHERE industry = 'banking'")
 ```
 
 ## Company Discover
@@ -229,6 +256,14 @@ print(report.report_id, report.status)
 ```
 
 Company records use `client.utility.report_company()` with the same parameters.
+
+## Credits
+
+```python
+balance = client.credits.balance()
+for contract in balance.contracts:
+    print(contract.endpoint, contract.credits_remaining)  # "/person" 380.0 (None when unlimited)
+```
 
 ## Health Check
 

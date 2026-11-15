@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -254,6 +256,35 @@ class PersonMatchesResponse(_Base):
     matches: list[PersonMatch] = []
     total: int = 0
     next_cursor: str | None = None
+
+
+class CountResponse(_Base):
+    """How many records a search would match, rounded (search count)."""
+
+    total: int = 0
+    total_status: str | None = None  # "about" | "at_least" | "under"
+    generated_query: dict[str, Any] | None = None  # set when the count was sent as filters
+
+
+class CreditContract(_Base):
+    """One contract's credits."""
+
+    team_contract_id: int | None = None
+    endpoint: str | None = (
+        None  # what its credits pay for: "/person" or "/company" covers every endpoint of it
+    )
+    credits_purchased: float | None = None
+    credits_used: float | None = None
+    credits_remaining: float | None = None  # None when unlimited
+    is_unlimited: bool = False
+    expiration_date: str | None = None
+
+
+class CreditsResponse(_Base):
+    """The team's credits, per contract."""
+
+    team: dict[str, Any] | None = None
+    contracts: list[CreditContract] = []
 
 
 class BulkPersonItemResult(_Base):

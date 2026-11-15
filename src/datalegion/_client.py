@@ -26,6 +26,8 @@ from ._types import (
     BulkPersonEnrichResponse,
     CompanyMatchesResponse,
     CompanyResponse,
+    CountResponse,
+    CreditsResponse,
     DataIssueReportResponse,
     DynamicBulkPersonEnrichResponse,
     EmailHashResponse,
@@ -53,7 +55,7 @@ DEFAULT_TIMEOUT = 60.0
 SANDBOX_PATHS = frozenset(
     f"/{entity}/{op}"
     for entity in ("person", "company")
-    for op in ("enrich", "enrich/bulk", "search", "discover")
+    for op in ("enrich", "enrich/bulk", "search", "search/count", "discover")
 )
 
 
@@ -266,7 +268,10 @@ class _PersonResource:
     def search(
         self,
         *,
-        query: str | dict[str, Any],
+        filters: dict[str, Any] | None = None,
+        sql: str | None = None,
+        es_query: dict[str, Any] | None = None,
+        query: str | dict[str, Any] | None = None,
         limit: int | None = None,
         offset: int | None = None,
         cursor: str | None = None,
@@ -275,16 +280,20 @@ class _PersonResource:
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> PersonMatchesResponse:
-        """Search for people with a SQL query or a query object.
+        """Search for people: send exactly one of ``filters``, ``sql`` or ``es_query``.
 
-        ``query`` is SQL when it is a string and an Elasticsearch-style query
-        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
-        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
-        dict. For deep paging send the previous page's ``next_cursor`` as
-        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        ``filters`` uses the record's own field names (``job_title``, ``state_code``): a value or a list (any of
+        them), ``{"gte": .., "lte": ..}`` for a range, ``{"exists": True}``; every field given must hold,
+        ``{"and" | "or" | "not": ...}`` groups combine sets, and ``keywords`` takes a Boolean search string. ``sql`` is
+        a ``SELECT * FROM people WHERE ...`` statement and ``es_query`` an Elasticsearch-style query object.
+        ``query``, the older form of ``sql`` / ``es_query``, still works. For deep paging send the previous page's
+        ``next_cursor`` as ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
         """
         body = _strip_none(
             {
+                "filters": filters,
+                "sql": sql,
+                "es_query": es_query,
                 "query": query,
                 "limit": limit,
                 "offset": offset,
@@ -295,7 +304,25 @@ class _PersonResource:
                 "pretty_print": pretty_print,
             }
         )
-        return PersonMatchesResponse.model_validate(self._client._post("/person/search", body))
+        data = self._client._post("/person/search", body)
+        self._client._update_generated_query(data)
+        return PersonMatchesResponse.model_validate(data)
+
+    def count(
+        self,
+        *,
+        filters: dict[str, Any] | None = None,
+        sql: str | None = None,
+        es_query: dict[str, Any] | None = None,
+    ) -> CountResponse:
+        """Count the people a search would match, without returning records. Free.
+
+        Takes what ``search`` takes (exactly one of ``filters``, ``sql`` or ``es_query``). ``total`` is rounded (to
+        the nearest 10 under 100, else to two significant figures); ``total_status`` is ``"about"``, ``"at_least"``
+        (counting ran out of time: a lower bound) or ``"under"`` (fewer than 10, possibly none).
+        """
+        body = _strip_none({"filters": filters, "sql": sql, "es_query": es_query})
+        return CountResponse.model_validate(self._client._post("/person/search/count", body))
 
     def discover(
         self,
@@ -421,7 +448,10 @@ class _CompanyResource:
     def search(
         self,
         *,
-        query: str | dict[str, Any],
+        filters: dict[str, Any] | None = None,
+        sql: str | None = None,
+        es_query: dict[str, Any] | None = None,
+        query: str | dict[str, Any] | None = None,
         limit: int | None = None,
         offset: int | None = None,
         cursor: str | None = None,
@@ -430,16 +460,20 @@ class _CompanyResource:
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> CompanyMatchesResponse:
-        """Search for companies with a SQL query or a query object.
+        """Search for companies: send exactly one of ``filters``, ``sql`` or ``es_query``.
 
-        ``query`` is SQL when it is a string and an Elasticsearch-style query
-        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
-        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
-        dict. For deep paging send the previous page's ``next_cursor`` as
-        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        ``filters`` uses the record's own field names (``industry``, ``locations.city``): a value or a list (any of
+        them), ``{"gte": .., "lte": ..}`` for a range, ``{"exists": True}``; every field given must hold,
+        ``{"and" | "or" | "not": ...}`` groups combine sets, and ``keywords`` takes a Boolean search string. ``sql`` is
+        a ``SELECT * FROM companies WHERE ...`` statement and ``es_query`` an Elasticsearch-style query object.
+        ``query``, the older form of ``sql`` / ``es_query``, still works. For deep paging send the previous page's
+        ``next_cursor`` as ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
         """
         body = _strip_none(
             {
+                "filters": filters,
+                "sql": sql,
+                "es_query": es_query,
                 "query": query,
                 "limit": limit,
                 "offset": offset,
@@ -450,7 +484,25 @@ class _CompanyResource:
                 "pretty_print": pretty_print,
             }
         )
-        return CompanyMatchesResponse.model_validate(self._client._post("/company/search", body))
+        data = self._client._post("/company/search", body)
+        self._client._update_generated_query(data)
+        return CompanyMatchesResponse.model_validate(data)
+
+    def count(
+        self,
+        *,
+        filters: dict[str, Any] | None = None,
+        sql: str | None = None,
+        es_query: dict[str, Any] | None = None,
+    ) -> CountResponse:
+        """Count the companies a search would match, without returning records. Free.
+
+        Takes what ``search`` takes (exactly one of ``filters``, ``sql`` or ``es_query``). ``total`` is rounded (to
+        the nearest 10 under 100, else to two significant figures); ``total_status`` is ``"about"``, ``"at_least"``
+        (counting ran out of time: a lower bound) or ``"under"`` (fewer than 10, possibly none).
+        """
+        body = _strip_none({"filters": filters, "sql": sql, "es_query": es_query})
+        return CountResponse.model_validate(self._client._post("/company/search/count", body))
 
     def discover(
         self,
@@ -752,7 +804,10 @@ class _AsyncPersonResource:
     async def search(
         self,
         *,
-        query: str | dict[str, Any],
+        filters: dict[str, Any] | None = None,
+        sql: str | None = None,
+        es_query: dict[str, Any] | None = None,
+        query: str | dict[str, Any] | None = None,
         limit: int | None = None,
         offset: int | None = None,
         cursor: str | None = None,
@@ -761,16 +816,20 @@ class _AsyncPersonResource:
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> PersonMatchesResponse:
-        """Search for people with a SQL query or a query object.
+        """Search for people: send exactly one of ``filters``, ``sql`` or ``es_query``.
 
-        ``query`` is SQL when it is a string and an Elasticsearch-style query
-        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
-        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
-        dict. For deep paging send the previous page's ``next_cursor`` as
-        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        ``filters`` uses the record's own field names (``job_title``, ``state_code``): a value or a list (any of
+        them), ``{"gte": .., "lte": ..}`` for a range, ``{"exists": True}``; every field given must hold,
+        ``{"and" | "or" | "not": ...}`` groups combine sets, and ``keywords`` takes a Boolean search string. ``sql`` is
+        a ``SELECT * FROM people WHERE ...`` statement and ``es_query`` an Elasticsearch-style query object.
+        ``query``, the older form of ``sql`` / ``es_query``, still works. For deep paging send the previous page's
+        ``next_cursor`` as ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
         """
         body = _strip_none(
             {
+                "filters": filters,
+                "sql": sql,
+                "es_query": es_query,
                 "query": query,
                 "limit": limit,
                 "offset": offset,
@@ -781,9 +840,25 @@ class _AsyncPersonResource:
                 "pretty_print": pretty_print,
             }
         )
-        return PersonMatchesResponse.model_validate(
-            await self._client._post("/person/search", body)
-        )
+        data = await self._client._post("/person/search", body)
+        self._client._update_generated_query(data)
+        return PersonMatchesResponse.model_validate(data)
+
+    async def count(
+        self,
+        *,
+        filters: dict[str, Any] | None = None,
+        sql: str | None = None,
+        es_query: dict[str, Any] | None = None,
+    ) -> CountResponse:
+        """Count the people a search would match, without returning records. Free.
+
+        Takes what ``search`` takes (exactly one of ``filters``, ``sql`` or ``es_query``). ``total`` is rounded (to
+        the nearest 10 under 100, else to two significant figures); ``total_status`` is ``"about"``, ``"at_least"``
+        (counting ran out of time: a lower bound) or ``"under"`` (fewer than 10, possibly none).
+        """
+        body = _strip_none({"filters": filters, "sql": sql, "es_query": es_query})
+        return CountResponse.model_validate(await self._client._post("/person/search/count", body))
 
     async def discover(
         self,
@@ -909,7 +984,10 @@ class _AsyncCompanyResource:
     async def search(
         self,
         *,
-        query: str | dict[str, Any],
+        filters: dict[str, Any] | None = None,
+        sql: str | None = None,
+        es_query: dict[str, Any] | None = None,
+        query: str | dict[str, Any] | None = None,
         limit: int | None = None,
         offset: int | None = None,
         cursor: str | None = None,
@@ -918,16 +996,20 @@ class _AsyncCompanyResource:
         exclude_fields: str | None = None,
         pretty_print: bool | None = None,
     ) -> CompanyMatchesResponse:
-        """Search for companies with a SQL query or a query object.
+        """Search for companies: send exactly one of ``filters``, ``sql`` or ``es_query``.
 
-        ``query`` is SQL when it is a string and an Elasticsearch-style query
-        object (``bool``, ``term``, ``terms``, ``match``, ``match_phrase``,
-        ``range``, ``exists``, ``prefix``, ``wildcard``, ``nested``) when it is a
-        dict. For deep paging send the previous page's ``next_cursor`` as
-        ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
+        ``filters`` uses the record's own field names (``industry``, ``locations.city``): a value or a list (any of
+        them), ``{"gte": .., "lte": ..}`` for a range, ``{"exists": True}``; every field given must hold,
+        ``{"and" | "or" | "not": ...}`` groups combine sets, and ``keywords`` takes a Boolean search string. ``sql`` is
+        a ``SELECT * FROM companies WHERE ...`` statement and ``es_query`` an Elasticsearch-style query object.
+        ``query``, the older form of ``sql`` / ``es_query``, still works. For deep paging send the previous page's
+        ``next_cursor`` as ``cursor`` (without ``offset``); the last page has no ``next_cursor``.
         """
         body = _strip_none(
             {
+                "filters": filters,
+                "sql": sql,
+                "es_query": es_query,
                 "query": query,
                 "limit": limit,
                 "offset": offset,
@@ -938,9 +1020,25 @@ class _AsyncCompanyResource:
                 "pretty_print": pretty_print,
             }
         )
-        return CompanyMatchesResponse.model_validate(
-            await self._client._post("/company/search", body)
-        )
+        data = await self._client._post("/company/search", body)
+        self._client._update_generated_query(data)
+        return CompanyMatchesResponse.model_validate(data)
+
+    async def count(
+        self,
+        *,
+        filters: dict[str, Any] | None = None,
+        sql: str | None = None,
+        es_query: dict[str, Any] | None = None,
+    ) -> CountResponse:
+        """Count the companies a search would match, without returning records. Free.
+
+        Takes what ``search`` takes (exactly one of ``filters``, ``sql`` or ``es_query``). ``total`` is rounded (to
+        the nearest 10 under 100, else to two significant figures); ``total_status`` is ``"about"``, ``"at_least"``
+        (counting ran out of time: a lower bound) or ``"under"`` (fewer than 10, possibly none).
+        """
+        body = _strip_none({"filters": filters, "sql": sql, "es_query": es_query})
+        return CountResponse.model_validate(await self._client._post("/company/search/count", body))
 
     async def discover(
         self,
@@ -1113,6 +1211,28 @@ class _AsyncUtilityResource:
 # ---------------------------------------------------------------------------
 
 
+class _CreditsResource:
+    """The team's credits."""
+
+    def __init__(self, client: DataLegion) -> None:
+        self._client = client
+
+    def balance(self) -> CreditsResponse:
+        """The team's remaining credits, per contract. Free."""
+        return CreditsResponse.model_validate(self._client._get("/credits"))
+
+
+class _AsyncCreditsResource:
+    """The team's credits."""
+
+    def __init__(self, client: AsyncDataLegion) -> None:
+        self._client = client
+
+    async def balance(self) -> CreditsResponse:
+        """The team's remaining credits, per contract. Free."""
+        return CreditsResponse.model_validate(await self._client._get("/credits"))
+
+
 class DataLegion:
     """Synchronous client for the Data Legion API.
 
@@ -1172,7 +1292,8 @@ class DataLegion:
         self.rate_limit_reset: int | None = None
         self.rate_limit_policy: str | None = None
         self.retry_after: int | None = None
-        self.generated_query: str | None = None
+        # Discover: the SQL it wrote; search by filters: the query object they compiled to
+        self.generated_query: str | dict[str, Any] | None = None
         self.correlation_id: str | None = None
         self.total_count_status: str | None = None
         self.search_warning: str | None = None
@@ -1181,6 +1302,7 @@ class DataLegion:
         self.person = _PersonResource(self)
         self.company = _CompanyResource(self)
         self.utility = _UtilityResource(self)
+        self.credits = _CreditsResource(self)
 
     def _default_headers(self) -> dict[str, str]:
         return {
@@ -1209,7 +1331,7 @@ class DataLegion:
         self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
-        """Extract generated_query from response body (Discover endpoints)."""
+        """Extract generated_query from a response body (Discover, and search by filters)."""
         self.generated_query = data.get("generated_query")
 
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -1323,7 +1445,8 @@ class AsyncDataLegion:
         self.rate_limit_reset: int | None = None
         self.rate_limit_policy: str | None = None
         self.retry_after: int | None = None
-        self.generated_query: str | None = None
+        # Discover: the SQL it wrote; search by filters: the query object they compiled to
+        self.generated_query: str | dict[str, Any] | None = None
         self.correlation_id: str | None = None
         self.total_count_status: str | None = None
         self.search_warning: str | None = None
@@ -1332,6 +1455,7 @@ class AsyncDataLegion:
         self.person = _AsyncPersonResource(self)
         self.company = _AsyncCompanyResource(self)
         self.utility = _AsyncUtilityResource(self)
+        self.credits = _AsyncCreditsResource(self)
 
     def _default_headers(self) -> dict[str, str]:
         return {
@@ -1360,7 +1484,7 @@ class AsyncDataLegion:
         self.search_warning = response.headers.get("Search-Warning")
 
     def _update_generated_query(self, data: dict[str, Any]) -> None:
-        """Extract generated_query from response body (Discover endpoints)."""
+        """Extract generated_query from a response body (Discover, and search by filters)."""
         self.generated_query = data.get("generated_query")
 
     async def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
