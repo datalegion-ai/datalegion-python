@@ -130,7 +130,7 @@ counted = client.person.count(filters={"job_title": "nurse practitioner", "state
 print(counted.total, counted.total_status)  # 16000 about
 ```
 
-`total_status` is `about` (the rounded count), `at_least` (counting ran out of time: a lower bound) or `under` (fewer than 10, possibly none). Counts are limited to 10 a minute and 200 an hour.
+`total_status` is `about` (the rounded count), `at_least` (counting ran out of time: a lower bound) or `under` (fewer than 10, possibly none). Counts are limited to 10 a minute and 200 an hour, and refuse filters on fields that identify one record (ids, names, emails, phones, URLs, domains, tickers): look one record up with enrich.
 
 ## Person Discover
 
