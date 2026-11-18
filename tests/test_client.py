@@ -473,12 +473,7 @@ class TestRequestCore:
             bodies.append(json.loads(request.content))
             return httpx.Response(
                 200,
-                json={
-                    "matches": [],
-                    "total": 0,
-                    "next_cursor": "abc",
-                    "generated_query": "SELECT * FROM people",
-                },
+                json={"matches": [], "total": 0, "next_cursor": "abc"},
             )
 
         with _mock_client(handler) as c:
@@ -1173,17 +1168,11 @@ class TestSearchInputsCountAndCredits:
         assert bodies[2] == {"es_query": {"term": {"domain": "stripe.com"}}}
         assert bodies[3] == {"query": "SELECT * FROM companies"}
 
-    def test_search_by_filters_reads_the_generated_query(self):
-        compiled = {"term": {"state_code": "TX"}}
-
-        def handler(_request):
-            return httpx.Response(
-                200, json={"matches": [], "total": 0, "generated_query": compiled}
-            )
-
-        with _mock_client(handler) as c:
+    def test_the_client_keeps_no_generated_query(self):
+        """The API returns no generated_query (removed 2026-11), so the client keeps none."""
+        with _mock_client(lambda _r: httpx.Response(200, json={"matches": [], "total": 0})) as c:
             c.person.search(filters={"state_code": "TX"})
-            assert c.generated_query == compiled
+            assert not hasattr(c, "generated_query")
 
     def test_count_posts_to_the_count_route_and_reads_the_total(self):
         calls = []
@@ -1203,7 +1192,7 @@ class TestSearchInputsCountAndCredits:
             ),
         ]
         assert (person.total, person.total_status) == (1200, "about")
-        assert company.generated_query is None
+        assert (company.total, company.total_status) == (1200, "about")
 
     def test_sandbox_routes_the_count(self):
         paths = []

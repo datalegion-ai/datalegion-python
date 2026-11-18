@@ -74,7 +74,6 @@ results = client.person.search(
 )
 for match in results.matches:
     print(match.person.full_name)
-print(client.generated_query)  # the query object the filters compiled to
 ```
 
 Combine sets of fields with `{"and": [...]}`, `{"or": [...]}` or `{"not": {...}}`, and search the profile text with a Boolean `keywords` string (`AND`, `OR`, `NOT` in capitals, "quoted phrases", parentheses):
@@ -322,7 +321,6 @@ print(client.rate_limit_remaining)   # remaining requests in current window
 print(client.rate_limit_reset)       # unix timestamp when window resets
 print(client.rate_limit_policy)      # rate limit policy (e.g. "100/min")
 print(client.retry_after)            # seconds to wait (on 429 responses)
-print(client.generated_query)        # SQL from the Discover endpoints
 print(client.correlation_id)         # echoed Correlation-ID
 print(client.total_count_status)     # search/discover: "exact" | "estimate" | "page"
 print(client.search_warning)         # search/discover: why a filter was flagged, or None

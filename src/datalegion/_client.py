@@ -305,7 +305,6 @@ class _PersonResource:
             }
         )
         data = self._client._post("/person/search", body)
-        self._client._update_generated_query(data)
         return PersonMatchesResponse.model_validate(data)
 
     def count(
@@ -354,7 +353,6 @@ class _PersonResource:
             }
         )
         data = self._client._post("/person/discover", body)
-        self._client._update_generated_query(data)
         return PersonMatchesResponse.model_validate(data)
 
 
@@ -485,7 +483,6 @@ class _CompanyResource:
             }
         )
         data = self._client._post("/company/search", body)
-        self._client._update_generated_query(data)
         return CompanyMatchesResponse.model_validate(data)
 
     def count(
@@ -534,7 +531,6 @@ class _CompanyResource:
             }
         )
         data = self._client._post("/company/discover", body)
-        self._client._update_generated_query(data)
         return CompanyMatchesResponse.model_validate(data)
 
 
@@ -841,7 +837,6 @@ class _AsyncPersonResource:
             }
         )
         data = await self._client._post("/person/search", body)
-        self._client._update_generated_query(data)
         return PersonMatchesResponse.model_validate(data)
 
     async def count(
@@ -890,7 +885,6 @@ class _AsyncPersonResource:
             }
         )
         data = await self._client._post("/person/discover", body)
-        self._client._update_generated_query(data)
         return PersonMatchesResponse.model_validate(data)
 
 
@@ -1021,7 +1015,6 @@ class _AsyncCompanyResource:
             }
         )
         data = await self._client._post("/company/search", body)
-        self._client._update_generated_query(data)
         return CompanyMatchesResponse.model_validate(data)
 
     async def count(
@@ -1070,7 +1063,6 @@ class _AsyncCompanyResource:
             }
         )
         data = await self._client._post("/company/discover", body)
-        self._client._update_generated_query(data)
         return CompanyMatchesResponse.model_validate(data)
 
 
@@ -1292,8 +1284,6 @@ class DataLegion:
         self.rate_limit_reset: int | None = None
         self.rate_limit_policy: str | None = None
         self.retry_after: int | None = None
-        # Discover: the SQL it wrote; search by filters: the query object they compiled to
-        self.generated_query: str | dict[str, Any] | None = None
         self.correlation_id: str | None = None
         self.total_count_status: str | None = None
         self.search_warning: str | None = None
@@ -1329,10 +1319,6 @@ class DataLegion:
         # search/discover only: why a filter was flagged (for example an industry
         # name no stored value matches) and what to change. None when absent.
         self.search_warning = response.headers.get("Search-Warning")
-
-    def _update_generated_query(self, data: dict[str, Any]) -> None:
-        """Extract generated_query from a response body (Discover, and search by filters)."""
-        self.generated_query = data.get("generated_query")
 
     def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         """Send a POST request and return the parsed JSON response."""
@@ -1445,8 +1431,6 @@ class AsyncDataLegion:
         self.rate_limit_reset: int | None = None
         self.rate_limit_policy: str | None = None
         self.retry_after: int | None = None
-        # Discover: the SQL it wrote; search by filters: the query object they compiled to
-        self.generated_query: str | dict[str, Any] | None = None
         self.correlation_id: str | None = None
         self.total_count_status: str | None = None
         self.search_warning: str | None = None
@@ -1482,10 +1466,6 @@ class AsyncDataLegion:
         # search/discover only: why a filter was flagged (for example an industry
         # name no stored value matches) and what to change. None when absent.
         self.search_warning = response.headers.get("Search-Warning")
-
-    def _update_generated_query(self, data: dict[str, Any]) -> None:
-        """Extract generated_query from a response body (Discover, and search by filters)."""
-        self.generated_query = data.get("generated_query")
 
     async def _post(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
         """Send a POST request and return the parsed JSON response."""

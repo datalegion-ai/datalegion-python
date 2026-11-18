@@ -263,7 +263,6 @@ class CountResponse(_Base):
 
     total: int = 0
     total_status: str | None = None  # "about" | "at_least" | "under"
-    generated_query: dict[str, Any] | None = None  # set when the count was sent as filters
 
 
 class CreditContract(_Base):
