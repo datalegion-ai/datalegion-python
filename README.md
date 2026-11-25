@@ -76,6 +76,8 @@ for match in results.matches:
     print(match.person.full_name)
 ```
 
+Location fields (`city`, `state`, `state_code`) come with contact data; on a plan without it, a filter on them is refused with a 400.
+
 Combine sets of fields with `{"and": [...]}`, `{"or": [...]}` or `{"not": {...}}`, and search the profile text with a Boolean `keywords` string (`AND`, `OR`, `NOT` in capitals, "quoted phrases", parentheses):
 
 ```python
@@ -125,7 +127,9 @@ Company search takes the same inputs and `cursor`.
 `count` takes what `search` takes and returns how many records match, rounded, without returning any. It is free and works with zero credits left: it needs an active plan that includes search, not a balance.
 
 ```python
-counted = client.person.count(filters={"job_title": "nurse practitioner", "state_code": "TX"})
+counted = client.person.count(
+    filters={"job_title": "nurse practitioner", "company_industry": "hospitals and health care"}
+)
 print(counted.total, counted.total_status)  # 16000 about
 ```
 
