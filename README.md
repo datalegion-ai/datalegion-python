@@ -96,7 +96,7 @@ results = client.person.search(
 
 ```python
 results = client.person.search(
-    sql="SELECT * FROM people WHERE company_name ILIKE '%google%' AND city = 'San Francisco'",
+    sql="SELECT * FROM people WHERE company_name ILIKE '%google%' AND job_title ILIKE '%engineer%'",
     limit=10,
 )
 results = client.person.search(
