@@ -76,6 +76,8 @@ for match in results.matches:
     print(match.person.full_name)
 ```
 
+Location fields (`city`, `state`, `state_code`) come with contact data; on a plan without it, a filter on them is refused with a 400.
+
 Combine sets of fields with `{"and": [...]}`, `{"or": [...]}` or `{"not": {...}}`, and search the profile text with a Boolean `keywords` string (`AND`, `OR`, `NOT` in capitals, "quoted phrases", parentheses):
 
 ```python
@@ -96,7 +98,7 @@ results = client.person.search(
 
 ```python
 results = client.person.search(
-    sql="SELECT * FROM people WHERE company_name ILIKE '%google%' AND city = 'San Francisco'",
+    sql="SELECT * FROM people WHERE company_name ILIKE '%google%' AND job_title ILIKE '%engineer%'",
     limit=10,
 )
 results = client.person.search(
@@ -125,8 +127,10 @@ Company search takes the same inputs and `cursor`.
 `count` takes what `search` takes and returns how many records match, rounded, without returning any. It is free and works with zero credits left: it needs an active plan that includes search, not a balance.
 
 ```python
-counted = client.person.count(filters={"job_title": "nurse practitioner", "state_code": "TX"})
-print(counted.total, counted.total_status)  # 16000 about
+counted = client.person.count(
+    filters={"job_title": "nurse practitioner", "company_industry": "hospitals and health care"}
+)
+print(counted.total, counted.total_status)  # 110000 about
 ```
 
 `total_status` is `about` (the rounded count), `at_least` (counting ran out of time: a lower bound) or `under` (fewer than 10, possibly none). Counts are limited to 10 a minute and 100 an hour (5 and 30 on a free trial), and refuse filters on fields that identify one record (ids, names, emails, phones, URLs, domains, tickers): look one record up with enrich.
