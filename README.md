@@ -130,7 +130,7 @@ Company search takes the same inputs and `cursor`.
 counted = client.person.count(
     filters={"job_title": "nurse practitioner", "company_industry": "hospitals and health care"}
 )
-print(counted.total, counted.total_status)  # 16000 about
+print(counted.total, counted.total_status)  # 110000 about
 ```
 
 `total_status` is `about` (the rounded count), `at_least` (counting ran out of time: a lower bound) or `under` (fewer than 10, possibly none). Counts are limited to 10 a minute and 100 an hour (5 and 30 on a free trial), and refuse filters on fields that identify one record (ids, names, emails, phones, URLs, domains, tickers): look one record up with enrich.
