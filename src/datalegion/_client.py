@@ -140,7 +140,7 @@ def _safe_int(value: str | None) -> int | None:
 
 
 class _PersonResource:
-    """Access person endpoints: Enrich, Search, Discover."""
+    """Access person endpoints: Enrichment, Search, Discover."""
 
     def __init__(self, client: DataLegion) -> None:
         self._client = client
@@ -357,7 +357,7 @@ class _PersonResource:
 
 
 class _CompanyResource:
-    """Access company endpoints: Enrich, Search, Discover."""
+    """Access company endpoints: Enrichment, Search, Discover."""
 
     def __init__(self, client: DataLegion) -> None:
         self._client = client
@@ -670,7 +670,7 @@ class _UtilityResource:
 
 
 class _AsyncPersonResource:
-    """Access person endpoints (async): Enrich, Search, Discover."""
+    """Access person endpoints (async): Enrichment, Search, Discover."""
 
     def __init__(self, client: AsyncDataLegion) -> None:
         self._client = client
@@ -889,7 +889,7 @@ class _AsyncPersonResource:
 
 
 class _AsyncCompanyResource:
-    """Access company endpoints (async): Enrich, Search, Discover."""
+    """Access company endpoints (async): Enrichment, Search, Discover."""
 
     def __init__(self, client: AsyncDataLegion) -> None:
         self._client = client
@@ -1260,7 +1260,7 @@ class DataLegion:
             )
         self._base_url = (base_url or DEFAULT_BASE_URL).rstrip("/")
         self._timeout = timeout or DEFAULT_TIMEOUT
-        # Sandbox mode: enrich, bulk enrich, search and discover return sample records, free.
+        # Sandbox mode: Enrichment, Bulk Enrichment, Search and Discover return sample records, free.
         self._sandbox = sandbox
 
         if httpx_client is not None:
@@ -1407,7 +1407,7 @@ class AsyncDataLegion:
             )
         self._base_url = (base_url or DEFAULT_BASE_URL).rstrip("/")
         self._timeout = timeout or DEFAULT_TIMEOUT
-        # Sandbox mode: enrich, bulk enrich, search and discover return sample records, free.
+        # Sandbox mode: Enrichment, Bulk Enrichment, Search and Discover return sample records, free.
         self._sandbox = sandbox
 
         if httpx_client is not None:

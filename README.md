@@ -390,7 +390,7 @@ All exceptions inherit from `DataLegionError` and include these attributes:
 
 ## Sandbox
 
-Pass `sandbox=True` to try the SDK without spending credits. Enrich, Bulk Enrich, Search and Discover then return sample records (Jane Sandbox, Sandbox Corp) with every field a real record has; the utilities, which are free anyway, call the real API.
+Pass `sandbox=True` to try the SDK without spending credits. Enrichment, Bulk Enrichment, Search and Discover then return sample records (Jane Sandbox, Sandbox Corp) with every field a real record has; the utilities, which are free anyway, call the real API.
 
 ```python
 client = DataLegion(api_key="legion_...", sandbox=True)
@@ -398,7 +398,7 @@ person = client.person.enrich(email="anyone@example.com")
 print(person.legion_id)  # "sandbox_person_001"
 ```
 
-Sandbox Discover answers only a few fixed example queries; the error lists them. If your API key is limited to certain endpoints, add the `/sandbox/...` ones.
+Sandbox Discover answers only a few fixed example queries; the error lists them.
 
 ## Configuration
 
