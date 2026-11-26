@@ -64,7 +64,7 @@ class PermissionDeniedError(APIError):
 
 
 class NotFoundError(APIError):
-    """Raised when nothing matches, e.g. an Enrich with no match (HTTP 404). No credits are used."""
+    """Raised when nothing matches, e.g. an Enrichment call with no match (HTTP 404). No credits are used."""
 
 
 class RequestTimeoutError(APIError):
