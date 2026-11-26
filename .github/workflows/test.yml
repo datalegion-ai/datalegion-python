@@ -17,7 +17,7 @@ concurrency:
 jobs:
 
   lint:
-    name: Lint & Build
+    name: Lint & build
     if: github.event.pull_request.draft != true
     runs-on: ubuntu-26.04
     timeout-minutes: 5
