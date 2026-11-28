@@ -51,7 +51,6 @@ jobs:
       - name: Build
         run: uv build
 
-
   test:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-26.04
@@ -92,7 +91,6 @@ jobs:
         run: uv run pytest tests/ -v --tb=short
         env:
           DATALEGION_API_KEY: ${{ secrets.DATALEGION_API_KEY }}
-
 
   publish-pypi:
     name: Publish to PyPI
