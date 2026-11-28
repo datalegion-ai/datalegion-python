@@ -19,7 +19,9 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # main only takes pull requests, so the release PR bumps the version and the tag must match it.
       - name: Check the tag matches pyproject.toml
@@ -31,11 +33,11 @@ jobs:
           }
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.4.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: "0.13.x"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          # No cache in the tag-triggered release workflow: a poisoned cache could reach what it publishes (zizmor cache-poisoning).
+          enable-cache: false
 
       - name: Set up Python
         run: uv python install  # .python-version, the 3.11 floor
@@ -69,15 +71,16 @@ jobs:
         python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.4.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: "0.13.x"
-          enable-cache: true
-          # Matrix legs share one cache key otherwise and race to save it ("Unable to reserve cache").
-          cache-suffix: py${{ matrix.python-version }}
+          # No cache in the tag-triggered release workflow: a poisoned cache could reach what it publishes (zizmor cache-poisoning).
+          enable-cache: false
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -108,10 +111,12 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.4.0
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
           version: "0.13.x"
 
